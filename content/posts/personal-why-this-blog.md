@@ -1,7 +1,8 @@
-# Life Update: Why I Started This Blog
-
-**Date:** 2025-10-05
-**Tags:** personal
+---
+title: "Life Update: Why I Started This Blog"
+date: 2025-10-05
+tags: [personal]
+---
 
 Alright, time for something personal.
 

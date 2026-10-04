@@ -1,7 +1,8 @@
-# Setting Up a Home Server with Proxmox
-
-**Date:** 2025-11-20
-**Tags:** homelab, linux, tutorial
+---
+title: Setting Up a Home Server with Proxmox
+date: 2025-11-20
+tags: [homelab, linux, tutorial]
+---
 
 Time to talk about one of my favorite topics: homelabbing. Today we're setting up Proxmox VE as the foundation for all your self-hosted services.
 

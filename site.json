@@ -1,0 +1,28 @@
+{
+  "title": "derlocke.net",
+  "description": "Linux, networking, homelab and the occasional grow log: notes from derlocke.",
+  "url": "https://derlocke.net",
+  "language": "en",
+  "author": "derlocke",
+  "email": "derlocke@derlocke.net",
+  "prompt": {
+    "command": "cd",
+    "path": "/var/home/derlocke"
+  },
+  "homePosts": 10,
+  "dock": {
+    "label": "Projects:",
+    "links": [
+      { "label": "🥝 Kiwi", "url": "/projects.html#kiwi-network", "title": "Kiwi Network" },
+      { "label": "🌿 Genetica", "url": "/projects.html#genetica-regis", "title": "Genetica Regis" },
+      { "label": "🌱 HerbHub", "url": "/projects.html#herbhub", "title": "HerbHub" },
+      { "label": "🖧 Infra", "url": "/projects.html#infrastructure", "title": "Infrastructure" }
+    ]
+  },
+  "footer": "© {year} derlocke.net · <a href=\"mailto:derlocke@derlocke.net\">Contact</a> · <a href=\"/feed.xml\">RSS</a> · Powered by <a href=\"https://github.com/derlocke-ng/kiwi-blog\">🥝 Kiwi Blog</a>",
+  "repo": {
+    "owner": "derlocke-ng",
+    "name": "derlocke-blog",
+    "branch": "main"
+  }
+}

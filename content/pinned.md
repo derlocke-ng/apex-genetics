@@ -1,0 +1,1 @@
+📌 **Pinned:** New here? Check out my [Getting Started with Linux](/posts/linux-getting-started/) guide, or browse the [Archive](/archive.html) to see all posts. Services like VPN and XMPP are available — see the dock below!
