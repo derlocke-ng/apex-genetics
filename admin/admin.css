@@ -946,3 +946,31 @@ input[type='checkbox'] {
     transition: none !important;
   }
 }
+
+/* ---------- admin password ---------- */
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.btn-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#removeVault {
+  margin-top: 1rem;
+}
+
+@media (max-width: 560px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

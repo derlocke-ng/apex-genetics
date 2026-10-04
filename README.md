@@ -17,7 +17,7 @@ browser-based admin panel. It's made for free hosting on GitHub Pages.
 - 📱 Responsive and accessible (skip link, keyboard focus, reduced-motion support)
 
 **For you (the author)**
-- 🔐 **Admin panel at `/admin/`**: write, edit, rename and delete posts and pages, then publish with one click
+- 🔐 **Admin panel at `/admin/`**, unlocked with a single password: write, edit, rename and delete posts and pages, then publish with one click
 - 👀 **Live preview** that looks exactly like the site, with a split view on desktop and tabs on mobile
 - 🖼️ **Image upload**: paste, drop or pick images. They're resized and converted to WebP automatically.
 - 💾 **Drafts & scheduled posts**: `draft: true`, or a future date that goes live on the daily rebuild
@@ -39,8 +39,8 @@ GitHub Pages only serves static files, so the admin panel talks **directly to th
 from your browser**. Saving a post creates a commit. That triggers the existing deploy workflow,
 which rebuilds the site in about a minute. There's no server, no database and nothing to pay for.
 
-Anyone can open `/admin/`, but it's useless without a GitHub token that has write access to this
-repository.
+Anyone can open `/admin/`, but it's useless without the admin password, which unlocks an encrypted
+GitHub token, or a GitHub token with write access to this repository.
 
 ## 🔐 Setting up the admin
 
@@ -49,10 +49,30 @@ repository.
    - *Repository access:* **Only select repositories** → `derlocke-ng/derlocke-blog`
    - *Permissions:* **Contents → Read and write** (required) and **Actions → Read** (optional, for the deploy status)
    - Pick an expiry date you're comfortable with. You can create a new token any time.
-3. Open **`https://derlocke.net/admin/`**, paste the token and sign in. Tick *Remember me* only on your own devices.
+3. **Set an admin password**, using either method:
+   - **In the browser:** open `https://derlocke.net/admin/`, choose *Sign in with a GitHub token*, paste the token, then go to **Settings → Admin password** and save a password.
+   - **On your computer:** run `npm run vault`, paste the token, choose a password, then commit and push `admin/vault.json`.
 
-The token is stored only in your browser (`sessionStorage`, or `localStorage` with *Remember me*)
-and is only ever sent to `api.github.com`. Sign out from **Settings** to remove it.
+From then on, `/admin/` only asks for the **password**, on any device.
+
+### How the password unlock works
+
+Your token is encrypted **in your browser** (or by `npm run vault`) with AES-256-GCM. The key is
+derived from your password with 1,000,000 rounds of PBKDF2-SHA256. Only the encrypted result is
+committed to the repo as `admin/vault.json`, and the plain token is never stored there. Entering
+the password decrypts the token locally, and it is only ever sent to `api.github.com`.
+
+⚠️ **The encrypted file is public**, so anyone can download it and try to guess the password
+offline, where no rate limit applies. The password is the *only* protection:
+
+- Use a **long, unique** password. The *Generate* button makes a random ~140-bit one; keep it in a password manager.
+  Short or reused passwords are rejected, but "strong enough for the checker" is not the same as strong.
+- Keep the token **scoped to this one repository** with only the permissions above, and give it an **expiry**.
+  Then even a leaked token can only touch this blog, and only until it expires. Revoke it on GitHub if in doubt.
+- If you forget the password, sign in with a token and save a new password. When the token expires,
+  sign in with a new token and save the password again; this re-encrypts the new token.
+
+Unless you tick *Stay signed in*, the unlocked token only lives in that browser tab. Sign out from **Settings**.
 
 > Because the admin runs on the same origin as the blog, don't add untrusted third-party
 > `<script>`s to the theme.
@@ -66,6 +86,7 @@ npm install
 npm run dev      # http://localhost:8000, rebuilds and reloads on every change, shows drafts
 npm run build    # production build into dist/
 npm test         # unit tests + build + broken-link check
+npm run vault    # encrypt your GitHub token with an admin password -> admin/vault.json
 ```
 
 ## ✍️ Writing posts
@@ -145,7 +166,8 @@ All of these can be edited from the admin. `site.json` looks like this:
 │   ├── style.css         all styling
 │   └── site.js           front-end behaviour
 ├── admin/                the admin panel (vanilla JS, no build step)
-├── lib/                  markdown + front matter code shared by build and admin
+├── lib/                  markdown, front matter & vault code shared by build and admin
+├── scripts/vault.js      creates admin/vault.json (npm run vault)
 ├── build.js              the generator (~400 lines)
 ├── dev.js                local preview server
 ├── test/                 node:test suites (run in CI before deploying)

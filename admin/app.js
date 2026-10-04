@@ -8,6 +8,9 @@ import {
 } from './lib/content.js';
 import { createMarkdown, rewriteRootUrls } from './lib/markdown.js';
 import { Marked } from './vendor/marked.esm.js';
+import {
+  sealVault, openVault, WrongPasswordError, passwordProblems, generatePassword, DEFAULT_ITERATIONS,
+} from './lib/vault.js';
 
 const PATHS = {
   posts: 'content/posts/',
@@ -16,6 +19,7 @@ const PATHS = {
   home: 'content/home.md',
   pinned: 'content/pinned.md',
   config: 'site.json',
+  vault: 'admin/vault.json',
 };
 const RAW_LABELS = { [PATHS.home]: 'Home intro', [PATHS.pinned]: 'Pinned notice' };
 const RESERVED = new Set(['index', 'archive', '404', 'feed', 'sitemap', 'robots', 'search', 'admin', 'posts', 'assets', 'media']);
@@ -28,6 +32,7 @@ const siteBase = new URL('../', location.href).href;
 const app = document.getElementById('app');
 
 let config = {};
+let vault = null; // encrypted token from vault.json, if a password is set up
 let gh = null;
 let user = null;
 let snap = null; // { headSha, files: Map<path, {sha, size}>, truncated }
@@ -289,9 +294,58 @@ function navigate(hash, { replace = false } = {}) {
 // Views
 // ---------------------------------------------------------------------------
 
-function showLogin(error = '') {
+function showLogin(error = '', { mode = vault ? 'password' : 'token' } = {}) {
   const owner = config.owner || '';
   const repo = config.repo || '';
+  const errorBox = error ? `<div class="alert alert-error" role="alert">${h(error)}</div>` : '';
+
+  if (mode === 'password') {
+    app.innerHTML = `
+    <div class="login">
+      <form class="login-card" id="unlockForm">
+        <div class="login-logo" aria-hidden="true">❯_</div>
+        <h1>${h(config.siteTitle || 'Blog')} <span>admin</span></h1>
+        <p class="hint">Enter the admin password to unlock publishing to <strong>${h(owner)}/${h(repo)}</strong>.</p>
+        ${errorBox}
+        <input type="text" name="username" value="admin" autocomplete="username" hidden>
+        <label class="field">Password
+          <input type="password" name="password" required autocomplete="current-password" spellcheck="false">
+        </label>
+        <label class="check"><input type="checkbox" name="remember"> Stay signed in on this device</label>
+        <button class="btn btn-primary btn-block" type="submit">Unlock</button>
+        <button class="btn btn-ghost btn-block btn-sm" type="button" id="useToken">Sign in with a GitHub token instead</button>
+      </form>
+    </div>`;
+    const form = $('#unlockForm');
+    form.password.focus();
+    $('#useToken').addEventListener('click', () => showLogin('', { mode: 'token' }));
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Unlocking…';
+      let session;
+      try {
+        session = await openVault(vault, form.password.value);
+      } catch (err) {
+        return showLogin(err instanceof WrongPasswordError ? 'Wrong password.' : err.message);
+      }
+      try {
+        await connect(session);
+      } catch (err) {
+        gh = null;
+        return showLogin(err.status === 401
+          ? 'Password accepted, but GitHub rejected the stored token (expired or revoked?). Sign in with a new token, then set the password again under Settings.'
+          : err.message);
+      }
+      saveSession(session, form.remember.checked);
+      toast(`Unlocked${user ? `. Hi ${user.login}!` : ''}`, 'success');
+      route();
+      initialDeployStatus();
+    });
+    return;
+  }
+
   app.innerHTML = `
   <div class="login">
     <form class="login-card" id="loginForm">
@@ -299,9 +353,9 @@ function showLogin(error = '') {
       <h1>${h(config.siteTitle || 'Blog')} <span>admin</span></h1>
       <p class="hint">Sign in with a GitHub access token. Everything you publish is committed to
         <strong>${h(owner)}/${h(repo)}</strong> and deployed automatically by GitHub Actions.</p>
-      ${error ? `<div class="alert alert-error" role="alert">${h(error)}</div>` : ''}
+      ${errorBox}
       <label class="field">Access token
-        <input type="password" name="token" required autocomplete="current-password" placeholder="github_pat_…" spellcheck="false">
+        <input type="password" name="token" required autocomplete="off" placeholder="github_pat_…" spellcheck="false">
       </label>
       <label class="check"><input type="checkbox" name="remember"> Remember me on this device</label>
       <details class="advanced">
@@ -313,6 +367,7 @@ function showLogin(error = '') {
         </div>
       </details>
       <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+      ${vault ? '<button class="btn btn-ghost btn-block btn-sm" type="button" id="usePassword">Unlock with the admin password instead</button>' : ''}
       <details class="help">
         <summary>How do I get a token?</summary>
         <ol>
@@ -321,12 +376,14 @@ function showLogin(error = '') {
           <li><em>Permissions</em>: <strong>Contents → Read and write</strong> (required) and <strong>Actions → Read</strong> (optional, shows the deploy status).</li>
           <li>Generate the token, copy it and paste it above.</li>
         </ol>
-        <p>The token never leaves your browser except to talk to the GitHub API. Without “Remember me” it is forgotten when you close the tab.</p>
+        <p>Tip: once signed in, set an <strong>admin password</strong> under Settings. The token is then stored encrypted
+          in the repository, and from then on the password alone unlocks the admin.</p>
       </details>
     </form>
   </div>`;
   const form = $('#loginForm');
   form.token.focus();
+  $('#usePassword')?.addEventListener('click', () => showLogin('', { mode: 'password' }));
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = form.querySelector('button[type="submit"]');
@@ -346,7 +403,7 @@ function showLogin(error = '') {
       initialDeployStatus();
     } catch (err) {
       gh = null;
-      showLogin(err.message);
+      showLogin(err.message, { mode: 'token' });
     }
   });
 }
@@ -1056,6 +1113,29 @@ async function viewSettings() {
       </div>
     </section>
     <section class="card">
+      <h2>Admin password</h2>
+      <p class="hint" id="vaultState"></p>
+      <p class="hint">Saving a password encrypts your current GitHub token (AES-256-GCM, key derived with
+        ${DEFAULT_ITERATIONS.toLocaleString('en')} rounds of PBKDF2) and commits it as <code>${PATHS.vault}</code>.
+        After that, the password alone unlocks this admin on any device.</p>
+      <div class="alert">The encrypted file is public, so anyone can try to guess the password offline, without any rate limit.
+        Use a <strong>long, unique</strong> password (the generator makes a ~140-bit one) and keep it in a password manager.
+        It cannot be recovered. If you forget it, sign in with a token and set a new one.</div>
+      <form id="vaultForm" class="grid-2" autocomplete="off">
+        <input type="text" name="username" value="admin" autocomplete="username" hidden>
+        <label class="field">New password<input type="password" name="newPassword" autocomplete="new-password" spellcheck="false"></label>
+        <label class="field">Repeat password<input type="password" name="repeatPassword" autocomplete="new-password" spellcheck="false"></label>
+      </form>
+      <div class="row">
+        <span id="pwStatus" class="json-status"></span>
+        <span class="btn-group">
+          <button type="button" class="btn" id="genPw">Generate</button>
+          <button type="button" class="btn btn-primary" id="savePw">Save password</button>
+        </span>
+      </div>
+      <button type="button" class="btn btn-danger btn-sm" id="removeVault" hidden>Remove password unlock</button>
+    </section>
+    <section class="card">
       <h2>Session</h2>
       <dl class="facts">
         <dt>Signed in as</dt><dd>${user ? `<a href="${h(user.html_url)}" target="_blank" rel="noopener">${h(user.login)}</a>` : 'unknown'}</dd>
@@ -1104,6 +1184,7 @@ async function viewSettings() {
       e.target.disabled = false;
     }
   });
+  wireVaultSettings();
   $('#logout').addEventListener('click', () => {
     if (dirty && !confirm('You have unsaved changes. Sign out anyway?')) return;
     clearSession();
@@ -1121,6 +1202,78 @@ async function viewSettings() {
   });
 }
 
+function wireVaultSettings() {
+  const form = $('#vaultForm');
+  const status = $('#pwStatus');
+  const stored = snap.files.get(PATHS.vault);
+  $('#vaultState').innerHTML = stored
+    ? `✅ Password unlock is <strong>enabled</strong>${vault?.created ? ` (set ${h(vault.created)})` : ''}. Saving a new password replaces it.`
+    : 'Password unlock is <strong>not set up</strong> yet.';
+  $('#removeVault').hidden = !stored;
+
+  const check = () => {
+    const pw = form.newPassword.value;
+    const problems = pw ? passwordProblems(pw) : [];
+    if (!pw) status.textContent = '';
+    else if (problems.length) status.textContent = `✗ Too weak: ${problems.join('; ')}`;
+    else if (form.repeatPassword.value && form.repeatPassword.value !== pw) status.textContent = '✗ The passwords do not match';
+    else status.textContent = form.repeatPassword.value ? '✓ Strong enough' : '✓ Strong enough. Now repeat it.';
+    status.className = `json-status ${status.textContent.startsWith('✓') ? 'ok' : 'error'}`;
+    return pw && !problems.length && pw === form.repeatPassword.value;
+  };
+  form.addEventListener('input', check);
+
+  $('#genPw').addEventListener('click', () => {
+    const pw = generatePassword();
+    form.newPassword.value = pw;
+    form.repeatPassword.value = pw;
+    form.newPassword.type = 'text';
+    form.newPassword.select();
+    check();
+    toast('Password generated. Copy it into your password manager before saving!', 'info', 8000);
+  });
+
+  $('#savePw').addEventListener('click', async (e) => {
+    if (!check()) {
+      toast(form.newPassword.value ? status.textContent.replace(/^✗ /, '') : 'Please enter a password.', 'error');
+      return;
+    }
+    e.target.disabled = true;
+    e.target.textContent = 'Encrypting…';
+    try {
+      const sealed = await sealVault({ token: gh.token, owner: gh.owner, repo: gh.repo, branch: gh.branch }, form.newPassword.value);
+      const sha = await gh.commit(stored ? 'Change admin password' : 'Set up admin password', [
+        { path: PATHS.vault, content: `${JSON.stringify(sealed, null, 2)}\n` },
+      ]);
+      vault = sealed;
+      watchDeploy(sha);
+      await refresh();
+      toast('Admin password saved. It works on other devices once the deploy is live.', 'success', 8000);
+      route();
+    } catch (err) {
+      toast(err.message, 'error', 8000);
+      e.target.disabled = false;
+      e.target.textContent = 'Save password';
+    }
+  });
+
+  $('#removeVault').addEventListener('click', async (e) => {
+    if (!confirm('Remove password unlock? You will need a GitHub token to sign in again.')) return;
+    e.target.disabled = true;
+    try {
+      const sha = await gh.commit('Remove admin password', [{ path: PATHS.vault, delete: true }]);
+      vault = null;
+      watchDeploy(sha);
+      await refresh();
+      toast('Password unlock removed', 'success');
+      route();
+    } catch (err) {
+      toast(err.message, 'error', 8000);
+      e.target.disabled = false;
+    }
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
@@ -1131,6 +1284,7 @@ async function boot() {
   } catch {
     config = {};
   }
+  vault = config.vault || null;
   setDirty(false);
   window.addEventListener('hashchange', onHashChange);
   window.addEventListener('beforeunload', (e) => {

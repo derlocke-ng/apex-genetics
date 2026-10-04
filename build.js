@@ -407,7 +407,7 @@ ${urls.map((u) => `  <url><loc>${xml(absUrl(u.loc))}</loc>${u.lastmod ? `<lastmo
 
   // ---- admin ---------------------------------------------------------------
   fs.cpSync(at('admin'), path.join(out, 'admin'), { recursive: true });
-  for (const f of ['content.js', 'markdown.js']) write(`admin/lib/${f}`, fs.readFileSync(at('lib', f)));
+  for (const f of ['content.js', 'markdown.js', 'vault.js']) write(`admin/lib/${f}`, fs.readFileSync(at('lib', f)));
   write('admin/vendor/marked.esm.js', fs.readFileSync(at('node_modules/marked/lib/marked.esm.js'), 'utf8').replace(/\n\/\/# sourceMappingURL=.*$/m, ''));
   write('admin/config.json', JSON.stringify({
     siteTitle: config.title,
@@ -417,6 +417,8 @@ ${urls.map((u) => `  <url><loc>${xml(absUrl(u.loc))}</loc>${u.lastmod ? `<lastmo
     branch: config.repo.branch || 'main',
     apiBase: config.repo.apiBase || 'https://api.github.com',
     version,
+    // Password-encrypted token (see `npm run vault`); null if not set up.
+    vault: fs.existsSync(at('admin/vault.json')) ? JSON.parse(fs.readFileSync(at('admin/vault.json'), 'utf8')) : null,
   }, null, 2));
 
   // ---- done ----------------------------------------------------------------
