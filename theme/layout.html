@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{{pageTitle}}</title>
+  <meta name="description" content="{{description}}">
+  <meta name="theme-color" content="#1a1a1a">
+  <meta name="color-scheme" content="dark light">
+{{meta}}
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖥️</text></svg>">
+  <link rel="alternate" type="application/rss+xml" title="{{siteTitle}}" href="/feed.xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cantarell:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="/assets/style.css?v={{version}}">
+  <script>try{if(localStorage.getItem('derlocke-darkMode')==='false')document.documentElement.classList.add('light')}catch(e){}</script>
+  <script src="/assets/site.js?v={{version}}" defer></script>
+</head>
+<body class="{{bodyClass}}">
+  <a class="skip-link" href="#content">Skip to content</a>
+  <div class="background-layer" aria-hidden="true"></div>
+  <div class="scroll-progress" aria-hidden="true"></div>
+
+  <nav class="taskbar" aria-label="Main">
+    <div class="logo">
+      <a href="/">
+        <span class="prompt-arrow">❯</span><span class="prompt-cmd">{{promptCommand}}</span> <span class="prompt-path">{{promptPath}}</span> <span class="cursor-blink" aria-hidden="true">█</span>
+      </a>
+    </div>
+    <div class="menu-container">
+      <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="menuDropdown">☰</button>
+      <div class="menu-dropdown" id="menuDropdown">
+        <ul class="menu">
+{{menu}}
+        </ul>
+        <div class="theme-controls">
+          <div class="theme-row">
+            <span class="theme-label">Theme</span>
+            <button id="darkModeToggle" class="dark-mode-toggle" title="Toggle dark/light mode">🌙</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-wrapper">
+{{sidebar}}
+    <main id="content">
+{{content}}
+    </main>
+  </div>
+
+{{dock}}
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-links">{{footerLinks}}</div>
+      <div class="footer-info">{{footer}}</div>
+    </div>
+  </footer>
+</body>
+</html>

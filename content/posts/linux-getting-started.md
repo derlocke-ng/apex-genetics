@@ -1,7 +1,8 @@
-# Getting Started with Linux
-
-**Date:** 2026-01-01
-**Tags:** linux, tutorial
+---
+title: Getting Started with Linux
+date: 2026-01-01
+tags: [linux, tutorial]
+---
 
 So you want to try Linux? Good choice. Here's my no-bullshit guide to getting started.
 

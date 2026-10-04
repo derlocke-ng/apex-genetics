@@ -1,7 +1,8 @@
-# Self-Hosting a WireGuard VPN
-
-**Date:** 2025-09-15
-**Tags:** networking, homelab, tutorial
+---
+title: Self-Hosting a WireGuard VPN
+date: 2025-09-15
+tags: [networking, homelab, tutorial]
+---
 
 Want secure remote access to your home network? WireGuard is fast, simple, and modern. Here's how to set it up.
 

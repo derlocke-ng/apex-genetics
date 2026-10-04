@@ -1,7 +1,8 @@
-# Home Cannabis Cultivation: A Beginner's Guide
-
-**Date:** 2025-12-15
-**Tags:** cannabis, tutorial
+---
+title: "Home Cannabis Cultivation: A Beginner's Guide"
+date: 2025-12-15
+tags: [cannabis, tutorial]
+---
 
 Growing your own cannabis at home can be incredibly rewarding — both medicinally and personally. Here's what I've learned from my journey.
 

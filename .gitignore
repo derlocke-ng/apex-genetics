@@ -1,8 +1,5 @@
-# Generated files
-index.html
-archive.html
-transparency.html
-projects.html
+node_modules/
+dist/
 
 # OS files
 .DS_Store
@@ -14,7 +11,3 @@ Thumbs.db
 *~
 .vscode/
 .idea/
-
-# Temp files
-/tmp/
-/kiwi-network/

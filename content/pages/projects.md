@@ -1,3 +1,10 @@
+---
+title: Projects
+menu: true
+order: 1
+description: Projects and infrastructure maintained by derlocke and the Kiwi Network.
+---
+
 # 🚀 Projects
 
 Projects and infrastructure we maintain, host, or contribute to.
