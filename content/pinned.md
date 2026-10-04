@@ -1,1 +1,1 @@
-📌 **Pinned:** New here? Check out my [Getting Started with Linux](/posts/linux-getting-started/) guide, or browse the [Archive](/archive.html) to see all posts. Services like VPN and XMPP are available — see the dock below!
+📌 **New:** [kiwi-updater 1.7](/posts/kiwi-updater/) installs and updates open-source apps straight from git catalogs on Silverblue and Bluefin. No accounts, no store. See all [Kiwi projects](/projects.html).

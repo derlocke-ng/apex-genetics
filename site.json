@@ -1,6 +1,6 @@
 {
   "title": "derlocke.net",
-  "description": "Linux, networking, homelab and the occasional grow log: notes from derlocke.",
+  "description": "Linux desktop, privacy and the Kiwi ecosystem: notes and release news from derlocke.",
   "url": "https://derlocke.net",
   "language": "en",
   "author": "derlocke",
@@ -11,12 +11,28 @@
   },
   "homePosts": 10,
   "dock": {
-    "label": "Projects:",
+    "label": "Kiwi:",
     "links": [
-      { "label": "🥝 Kiwi", "url": "/projects.html#kiwi-network", "title": "Kiwi Network" },
-      { "label": "🌿 Genetica", "url": "/projects.html#genetica-regis", "title": "Genetica Regis" },
-      { "label": "🌱 HerbHub", "url": "/projects.html#herbhub", "title": "HerbHub" },
-      { "label": "🖧 Infra", "url": "/projects.html#infrastructure", "title": "Infrastructure" }
+      {
+        "label": "🥝 Updater",
+        "url": "/projects.html#kiwi-updater",
+        "title": "kiwi-updater"
+      },
+      {
+        "label": "📚 Catalog",
+        "url": "/projects.html#kiwi-catalog",
+        "title": "kiwi-catalog"
+      },
+      {
+        "label": "🛡️ Kill Switch",
+        "url": "/projects.html#kiwi-killswitch",
+        "title": "kiwi-killswitch"
+      },
+      {
+        "label": "🏡 Ensconce",
+        "url": "/projects.html#ensconce",
+        "title": "ensconce"
+      }
     ]
   },
   "footer": "© {year} derlocke.net · <a href=\"mailto:derlocke@derlocke.net\">Contact</a> · <a href=\"/feed.xml\">RSS</a> · Powered by <a href=\"https://github.com/derlocke-ng/kiwi-blog\">🥝 Kiwi Blog</a>",
