@@ -2,131 +2,150 @@
 title: Projects
 menu: true
 order: 1
-description: Projects and infrastructure maintained by derlocke and the Kiwi Network.
+description: The Kiwi ecosystem — kiwi-updater, its app catalog, kiwi-killswitch, ensconce and more. Open source, no accounts, no lock-in.
 ---
 
-# 🚀 Projects
+# 🥝 Projects
 
-Projects and infrastructure we maintain, host, or contribute to.
-
----
-
-## 🥝 Kiwi Network {#kiwi-network}
-
-A modular, federated privacy infrastructure platform.
-
-**Website:** [kiwi-network.eu](https://kiwi-network.eu)
-
-Kiwi Network transforms Docker-based privacy services into a turnkey appliance with:
-
-- **Modular architecture** — Mix and match services (cloud, VPN, downloads, etc.)
-- **Split-horizon DNS** — Local LAN IPs + VPN mesh IPs
-- **Federation support** — Securely connect multiple kiwi networks
-- **Easy deployment** — Pre-built ISOs or manual setup
-
-### Architecture
+Everything here is part of the **Kiwi** ecosystem: small, open-source tools for Fedora
+Silverblue and Bluefin desktops, licensed GPL-3.0-or-later and installable with one command
+through [kiwi-updater](#kiwi-updater). No accounts, no store, no vendor.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    KIWI MASTER                          │
-│  km-vpn-server (WireGuard) ─┬─ km-pihole (DNS)         │
-│  km-vpn-client (Gluetun)    ├─ km-tor (SOCKS5)         │
-│  km-control (API + WebUI)   └─ km-ca (Certificates)    │
-└─────────────────────────────────────────────────────────┘
-                         │ WireGuard Mesh
-         ┌───────────────┼───────────────┐
-         ▼               ▼               ▼
-   ┌───────────┐   ┌───────────┐   ┌───────────┐
-   │ Node: GW  │   │Node: Cloud│   │Node: Both │
-   └───────────┘   └───────────┘   └───────────┘
+              kiwi-catalog   (a git repo with an apps.list)
+                    │
+                    ▼
+   kiwi-updater:  kiwi (CLI) · Kiwi Apps (GTK4) · systemd timers
+                    │   clones the release tag, runs install.sh,
+                    │   keeps it updated in the background
+      ┌─────────────┼───────────────┬─────────────────────────┐
+      ▼             ▼               ▼                         ▼
+ kiwi-updater  kiwi-killswitch   ensconce        kiwi-cli-tools-desktop
 ```
 
-### Available Modules
+---
 
-| Module | Category | Description |
-|--------|----------|-------------|
-| vpn-client | core | Gluetun VPN client (Mullvad, etc.) |
-| vpn-server | core | WireGuard server (wg-easy) |
-| dns | core | Pi-hole DNS + ad-blocking |
-| cloud | productivity | Nextcloud AIO |
-| vault | security | Vaultwarden password manager |
-| gateway | network | LAN gateway with PBR |
-| downloader | storage | Transmission + JDownloader |
+## 🥝 kiwi-updater {#kiwi-updater}
+
+**Install and update open-source apps from git catalogs** on Silverblue, Bluefin and other
+ostree systems. An app is just a git repo with a `kiwi.manifest` and an `install.sh`;
+`kiwi` clones it, checks out its latest release tag, runs its installer and keeps it updated
+in the background — including itself.
+
+- **`kiwi`**, the CLI, and **Kiwi Apps**, a GTK4 desktop app to search, browse and inspect the catalogs
+- **Releases are git tags**: apps follow their latest version tag, so pre-releases never sneak in
+- **User and system scopes**: user apps live in `~/.local` with no root at all; apps with a root half (like a firewall daemon) are cloned and run as root from `/var/lib`, so root never executes a file you can write
+- **Background updates** with systemd timers, and passwordless system *updates* through one polkit-gated helper
+- **You decide what runs**: `kiwi info --installer` shows a script before it runs, `kiwi diff` shows what an update changes, `kiwi pin` holds a version
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/derlocke-ng/kiwi-updater/main/get-kiwi.sh | bash -s -- --with-system
+kiwi catalog add https://github.com/derlocke-ng/kiwi-catalog.git
+kiwi list
+```
+
+**Status:** 1.7.2 · [GitHub](https://github.com/derlocke-ng/kiwi-updater) · [Changelog](https://github.com/derlocke-ng/kiwi-updater/blob/main/CHANGELOG.md) · [Intro post](/posts/kiwi-updater/)
 
 ---
 
-## 🌿 Genetica Regis {#genetica-regis}
+## 📚 kiwi-catalog {#kiwi-catalog}
 
-A cannabis breeding documentation project.
+**The app catalog of the Kiwi Network.** A catalog is just a git repo with an `apps.list`,
+so managing a fleet is plain git: add a line to add an app, append `ref=<tag>` to pin it,
+delete the line to drop it. A machine's own list always wins over a catalog.
 
-**Website:** [genetica-regis.github.io](https://genetica-regis.github.io/)
+| App | What it is |
+|-----|------------|
+| [kiwi-updater](#kiwi-updater) | The updater itself — it keeps itself current too |
+| [kiwi-killswitch](#kiwi-killswitch) | Fail-closed VPN kill switch for GNOME |
+| [ensconce](#ensconce) | Post-installation setup for Bluefin-DX |
+| [kiwi-cli-tools-desktop](#kiwi-cli-tools-desktop) | Small desktop CLI helpers |
 
-Genetica Regis is dedicated to developing exceptional cannabis genetics through careful selection, stabilization, and documentation.
+Got an open-source app that is genuinely usable without an account, a subscription or a
+tracker? Add a `kiwi.manifest` and an `install.sh`, tag a release and open a pull request.
+The catalog is curated, not audited: being listed means someone thought the app worth having.
 
-**Focus areas:**
-- 🧬 **Genetic Selection** — Pheno-hunting for exceptional traits
-- 🌱 **Breeding Projects** — Creating new stable crosses
-- 🫘 **Seed Production** — Maintaining seed stock
-- 📝 **Documentation** — Recording lineages and grow data
-
----
-
-## 🌱 HerbHub {#herbhub}
-
-A decentralized, community-driven social platform for cannabis growers.
-
-**Status:** In Development
-
-HerbHub is an Instagram alternative built specifically for the cannabis community, with privacy and decentralization at its core.
-
-### Features
-
-- **Decentralized** — No central server, runs on Gun.js + IPFS
-- **E2E Encrypted Chat** — Private messaging with full encryption
-- **Encrypted Marketplace** — Secure trading between growers
-- **Review System** — Community-driven reputation
-- **Media Sharing** — Photos and grow logs stored on IPFS
-
-### Technology Stack
-
-| Layer | Technology |
-|-------|------------|
-| Data Sync | Gun.js (decentralized database) |
-| File Storage | IPFS (distributed file system) |
-| Encryption | SEA (Security, Encryption, Authorization) |
-| Frontend | Progressive Web App |
+[GitHub](https://github.com/derlocke-ng/kiwi-catalog)
 
 ---
 
-## 🖧 Infrastructure {#infrastructure}
+## 🛡️ kiwi-killswitch {#kiwi-killswitch}
 
-Decentralized nodes operated by Kiwi Network to support HerbHub and other projects.
+**A fail-closed VPN kill switch for GNOME** on Silverblue and Bluefin. One root daemon owns
+the firewall (nftables); a Quick Settings toggle, a GTK4 app and a CLI drive it over D-Bus,
+with no password prompt.
 
-### Gun.js Relay Nodes
+- **Fail-closed**: traffic leaves only through the protected WireGuard or OpenVPN tunnel — if the VPN drops, you reboot or you switch networks, everything stays blocked
+- **New interfaces can't leak**: tethering or Wi-Fi brought up while armed is blocked by default
+- **Three depths**: *standard*, *strict* (also forwarded traffic from containers, VMs and Waydroid) and *paranoid* (netdev egress, catches raw sockets)
+- **DNS stays put**: through the VPN, a trusted kiwi-node or a resolver you choose, with an nftables backstop
+- **Staged changes**: reconfigure everything, then apply it in one atomic transaction
 
-We operate **2 Gun.js relay nodes** that help synchronize data across the decentralized network:
+```bash
+kiwi install kiwi-killswitch
+```
 
-- `gun1.kiwi-network.eu`
-- `gun2.kiwi-network.eu`
+**Status:** 0.1.0 · [GitHub](https://github.com/derlocke-ng/kiwi-killswitch)
 
-These relays ensure data availability and faster sync times for HerbHub users.
+---
 
-### IPFS Nodes
+## 🏡 ensconce {#ensconce}
 
-We operate **2 IPFS nodes** for distributed file storage:
+**Modular post-installation setup for [Bluefin-DX](https://projectbluefin.io/).** Turns a
+fresh install into your configured workstation — packages, Flatpaks, GNOME extensions,
+Nextcloud sync, dconf settings and the login screen — from plain list files.
 
-- `ipfs1.kiwi-network.eu`
-- `ipfs2.kiwi-network.eu`
+- Modular steps you can `--skip` or run `--only`, with dry-run, logging and auto-resume after reboots
+- **Clone a machine**: `ensconce --export` reads a configured system and writes the config for the next one
 
-These nodes pin and serve content for HerbHub, ensuring media remains accessible even when original uploaders are offline.
+```bash
+kiwi install ensconce
+ensconce --init && ensconce
+```
+
+**Status:** 2.1.1 · [GitHub](https://github.com/derlocke-ng/ensconce)
+
+---
+
+## 🧰 kiwi-cli-tools-desktop {#kiwi-cli-tools-desktop}
+
+**Three small CLI helpers** for a Linux desktop:
+
+- **`pweb`** — serve the current directory over HTTPS on a random port, to hand a file to another machine on the LAN
+- **`select-server`** — a numbered menu of the hosts in your `~/.ssh/config`; pick one and connect
+- **`tethering`** — set TTL 64 on traffic from a tethered interface (`--status`, `--off`)
+
+```bash
+kiwi install kiwi-cli-tools-desktop
+```
+
+**Status:** 1.0.0 · [GitHub](https://github.com/derlocke-ng/kiwi-cli-tools-desktop)
+
+---
+
+## 🌐 Kiwi Network {#kiwi-network}
+
+The umbrella for all of the above: a **privacy-first approach to self-hosted
+infrastructure**, built on one idea — expose as little as possible. Only a WireGuard entry
+point faces the internet; everything else lives behind the tunnel. The desktop side
+(Silverblue/Bluefin workstations) is where the tools on this page come in.
+
+[kiwi-network.eu](https://kiwi-network.eu) · [GitHub](https://github.com/derlocke-ng/kiwi-network)
+
+---
+
+## 📝 Kiwi Blog {#kiwi-blog}
+
+The engine behind this site: Markdown in, fast static pages out, with a browser-based admin
+that commits straight to GitHub. Hosted for free on GitHub Pages.
+
+[GitHub](https://github.com/derlocke-ng/derlocke-blog)
 
 ---
 
 ## 📧 Contact
 
-Interested in any of these projects?
-
-- **Email:** info@derlocke.net
+- **Email:** [info@derlocke.net](mailto:info@derlocke.net)
 - **GitHub:** [github.com/derlocke-ng](https://github.com/derlocke-ng)
 
-All projects are open source and contributions are welcome!
+Issues and pull requests are welcome on every project.

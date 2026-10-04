@@ -82,7 +82,7 @@ PersistentKeepalive = 25
 
 I run WireGuard in an LXC container on Proxmox. Works perfectly. I can access my home network from anywhere, securely.
 
-The service dock on this site? That's where you'll find registration for my VPN (friends/family only, sorry!).
+On a Silverblue or Bluefin laptop, pair the client side with [kiwi-killswitch](/projects.html#kiwi-killswitch): a fail-closed firewall that only lets traffic out through your WireGuard tunnel, so nothing leaks when the VPN drops.
 
 ---
 

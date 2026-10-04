@@ -1021,7 +1021,6 @@ footer {
 }
 
 .tag-linux { background: hsla(0, 35%, 45%, 0.25); color: var(--color-red); }
-.tag-cannabis { background: hsla(120, 35%, 45%, 0.25); color: hsl(120, 40%, 50%); }
 .tag-personal { background: hsla(280, 35%, 45%, 0.25); color: hsl(280, 40%, 55%); }
 .tag-networking { background: hsla(210, 35%, 45%, 0.25); color: var(--color-blue); }
 

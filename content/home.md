@@ -1,19 +1,17 @@
 # Welcome to derlocke.net
 
-Hey there! I'm derlocke — a Linux enthusiast, sysadmin, network tinkerer, and occasional cannabis cultivator. This is my corner of the internet where I share tutorials, tips, stories, and whatever else crosses my mind.
+Hey there! I'm derlocke: Linux tinkerer, sysadmin and the person behind the **Kiwi** tools. These days most of my time goes into making Fedora Silverblue and Bluefin desktops easier to set up, keep updated and lock down, with small, open-source tools that need no accounts and no app store.
 
 ## What you'll find here
 
-- 🐧 **Linux & Sysadmin** — Server setups, troubleshooting, automation scripts
-- 🌐 **Networking** — Home labs, VPNs, self-hosting adventures  
-- 🌿 **Cannabis** — Medical use, home cultivation, growing tips
-- 📝 **Personal** — Life stories, thoughts, and the occasional rant
+- 🥝 **The Kiwi ecosystem**: [kiwi-updater](/posts/kiwi-updater/), its app catalog and the apps in it. Release notes, design notes and the occasional post-mortem.
+- 🐧 **Linux desktop**: immutable systems (Silverblue, Bluefin), GNOME, shell tooling
+- 🔐 **Privacy & networking**: VPNs, kill switches, firewalls, self-hosting
+- 📝 **Personal**: thoughts and the occasional rant
 
-Feel free to explore, and don't hesitate to reach out if you have questions or just want to chat.
+Everything I build is on [GitHub](https://github.com/derlocke-ng). Have a look at the [projects](/projects.html), and don't hesitate to reach out.
 
 ```bash
-$ whoami
-derlocke
-$ cat /etc/motd
-Welcome. Make yourself at home.
+$ kiwi catalog add https://github.com/derlocke-ng/kiwi-catalog.git
+$ kiwi list
 ```
