@@ -5,11 +5,12 @@
   "language": "en",
   "author": "derlocke",
   "brandIcon": "🌿",
-  "design": { "preset": "apex" },
+  "design": { "preset": "doctorschoice" },
   "hero": {
     "eyebrow": "Personal breeding program",
     "title": "Breeding better cannabis, one generation at a time.",
     "text": "Challenges, tutorials, grow and breeding reports, plans, the seed stash, mother plants and cuts, all documented in one place.",
+    "banner": "Every seed lot, mother and cut documented. Breed your own.",
     "cta": [
       { "label": "Browse the library", "url": "/archive.html" },
       { "label": "Meet the mothers", "url": "/mothers/" }
@@ -26,7 +27,7 @@
     { "key": "cuts", "label": "Cuts", "short": "Cuts", "singular": "Cut", "icon": "✂️", "blurb": "Clones and cuts in the library, and what's available." }
   ],
   "homePosts": 6,
-  "footer": "© {year} Apex Genetics · Personal breeding project · For legal adult use only, where permitted · <a href=\"/feed.xml\">RSS</a>",
+  "footer": "© {year} Apex Genetics · Personal breeding project · For legal adult use only, where permitted",
   "repo": {
     "owner": "derlocke-ng",
     "name": "apex-genetics",

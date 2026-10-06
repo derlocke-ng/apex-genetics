@@ -110,6 +110,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       scheduled: Boolean(date && date > now),
       type,
       section,
+      cross: data.cross ? String(data.cross) : '',
       facts: FACTS.filter(([k]) => data[k] !== undefined && data[k] !== '').map(([k, label]) => [label, String(data[k])]),
       status: data.status ? String(data.status) : '',
       body,
@@ -173,8 +174,8 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     ...(Array.isArray(config.nav) ? config.nav : []),
   ];
 
-  const chips = (p) => [
-    `<span class="chip chip-accent">${esc(p.section.singular)}</span>`,
+  const chips = (p, kind = true) => [
+    ...(kind ? [`<span class="chip chip-accent">${esc(p.section.singular)}</span>`] : []),
     ...(p.status ? [`<span class="chip chip-ok">${esc(p.status)}</span>`] : []),
     ...p.tags.map((t) => `<span class="chip">${esc(t)}</span>`),
   ].join('');
@@ -192,7 +193,13 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     const menu = navItems
       .map((n) => `          <li><a href="${esc(n.url)}"${isActive(n) ? ' class="active" aria-current="page"' : ''}>${esc(n.label)}</a></li>`)
       .join('\n');
-    const footerLinks = [{ label: 'Library', url: '/archive.html' }, ...navItems].map((n) => `<a href="${esc(n.url)}">${esc(n.label)}</a>`).join('');
+    const col = (title, items) => `<div class="footer-col"><h2>${esc(title)}</h2>${items.map((n) => `<a href="${esc(n.url)}">${esc(n.label)}</a>`).join('')}</div>`;
+    const extraNav = navItems.filter((n) => !sections.some((x) => n.url === `/${x.key}/`));
+    const footerLinks = [
+      col('Explore', sections.map((x) => ({ label: x.short, url: `/${x.key}/` }))),
+      col('Site', [{ label: 'Library', url: '/archive.html' }, ...extraNav]),
+      col('Follow', [{ label: 'RSS feed', url: '/feed.xml' }]),
+    ].join('');
     const metaTags = [
       ['og:site_name', config.title],
       ['og:title', title || config.title],
@@ -205,6 +212,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
 
     const vars = {
       lang: esc(config.language),
+      defaultMode: design.defaultMode,
       pageTitle: esc(title ? `${title} · ${config.title}` : config.title),
       siteTitle: esc(config.title),
       description: esc(description),
@@ -226,10 +234,14 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
 
   // ---- cards -----------------------------------------------------------------
   const card = (p) => `<a class="card entry-card" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}">
-  <div class="chips">${chips(p)}</div>
-  <h3>${esc(p.title)}</h3>
-  <p>${esc(p.description)}</p>
-  ${entryMeta(p)}
+  <div class="card-thumb"><span class="card-icon" aria-hidden="true">${esc(p.section.icon)}</span><span class="card-kind">${esc(p.section.singular)}</span></div>
+  <div class="card-body">
+    <h3>${esc(p.title)}</h3>
+    <div class="chips">${chips(p, false)}</div>
+    ${p.cross ? `<p class="card-cross">${esc(p.cross)}</p>` : `<p class="card-text">${esc(p.description)}</p>`}
+    ${entryMeta(p)}
+    <span class="view-btn">View ${esc(p.section.singular.toLowerCase())}</span>
+  </div>
 </a>`;
 
   // ---- home ----------------------------------------------------------------
@@ -239,19 +251,29 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     urlPath: '/',
     bodyClass: 'page-home',
     content: `<section class="hero">
-  <div class="container">
-    ${hero.eyebrow ? `<p class="eyebrow">${esc(hero.eyebrow)}</p>` : ''}
-    <h1>${esc(hero.title || config.title)}</h1>
-    ${hero.text ? `<p class="hero-text">${esc(hero.text)}</p>` : ''}
-    <div class="hero-cta">
-      ${(hero.cta || []).map((b, i) => `<a class="btn${i ? ' btn-ghost' : ''}" href="${esc(b.url)}">${esc(b.label)}</a>`).join('\n      ')}
+  <div class="container hero-grid">
+    <div class="hero-copy">
+      ${hero.eyebrow ? `<p class="eyebrow">${esc(hero.eyebrow)}</p>` : ''}
+      <h1>${esc(hero.title || config.title)}</h1>
+      ${hero.text ? `<p class="hero-text">${esc(hero.text)}</p>` : ''}
+      <div class="hero-cta">
+        ${(hero.cta || []).map((b, i) => `<a class="btn${i ? ' btn-ghost' : ''}" href="${esc(b.url)}">${esc(b.label)}</a>`).join('\n        ')}
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <span class="hero-art-icon">${esc(config.brandIcon || '🌿')}</span>
+      <span class="hero-art-count">${posts.length}</span>
+      <span class="hero-art-label">entries in the library</span>
     </div>
   </div>
 </section>
+${hero.banner ? `<div class="promo-banner"><div class="container"><p>${esc(hero.banner)}</p></div></div>` : ''}
 ${pinnedHtml ? `<div class="container"><aside class="pinned">\n${pinnedHtml}</aside></div>` : ''}
 <section class="block container" aria-labelledby="sections-title">
-  <p class="eyebrow">Explore</p>
-  <h2 id="sections-title">The breeding program</h2>
+  <div class="section-head section-head-center">
+    <div><p class="eyebrow eyebrow-plain">${esc(config.title)}</p>
+    <h2 id="sections-title">The breeding program</h2></div>
+  </div>
   <div class="tile-grid">
 ${sections.map((x) => `    <a class="card tile" href="/${x.key}/">
       <span class="tile-icon" aria-hidden="true">${esc(x.icon)}</span>
@@ -262,8 +284,8 @@ ${sections.map((x) => `    <a class="card tile" href="/${x.key}/">
   </div>
 </section>
 <section class="block container" aria-labelledby="latest-title">
-  <div class="section-head">
-    <div><p class="eyebrow">Fresh from the garden</p><h2 id="latest-title">Latest updates</h2></div>
+  <div class="section-head section-head-rule">
+    <div><p class="eyebrow eyebrow-marker">Live breeding journal</p><h2 id="latest-title">Latest updates</h2></div>
     <a href="/archive.html" class="btn btn-ghost">Browse the library →</a>
   </div>
   <div class="card-grid">
@@ -299,12 +321,16 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
   // ---- entries ---------------------------------------------------------------
   posts.forEach((p) => {
     const siblings = postsBySection.get(p.section.key);
-    const i = siblings.indexOf(p);
-    const newer = siblings[i - 1];
-    const older = siblings[i + 1];
     const toc = p.toc.length >= 3
       ? `<details class="toc card"><summary>On this page</summary><nav>${p.toc.map((h) => `<a href="#${h.id}" class="toc-depth-${h.depth}">${esc(h.text)}</a>`).join('')}</nav></details>`
       : '';
+    const related = siblings.filter((x) => x !== p).slice(0, 3);
+    const metaRows = [
+      ['Category', `<a href="/${p.section.key}/">${esc(p.section.label)}</a>`],
+      ...(p.tags.length ? [['Tags', p.tags.map((t) => esc(t)).join(', ')]] : []),
+      ...(p.date ? [['Published', `<time datetime="${p.date}">${formatDate(p.date)}</time>`]] : []),
+      ['Reading time', `${p.readingTime} min`],
+    ];
     renderPage(`${p.section.key}/${p.slug}/index.html`, {
       title: p.title,
       description: p.description,
@@ -315,27 +341,49 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
         ...(p.date ? [['article:published_time', p.date]] : []),
         ...p.tags.map((t) => ['article:tag', t]),
       ],
-      content: `<header class="page-hero">
-  <div class="container">
-    <p class="eyebrow"><a href="/${p.section.key}/">${esc(p.section.icon)} ${esc(p.section.label)}</a></p>
-    <h1>${esc(p.title)}</h1>
-    ${entryMeta(p)}
-    <div class="chips">${chips(p)}</div>
+      content: `<nav class="breadcrumb container" aria-label="Breadcrumb">
+  <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
+</nav>
+<article class="entry">
+  <div class="container product">
+    <div class="product-media">
+      <div class="specimen">
+        <span class="specimen-icon" aria-hidden="true">${esc(p.section.icon)}</span>
+        <span class="specimen-kind">${esc(p.section.singular)}</span>
+        ${p.facts.length ? `<span class="specimen-name">${esc(p.facts[0][1])}</span>` : ''}
+        ${p.status ? `<span class="specimen-status">${esc(p.status)}</span>` : ''}
+      </div>
+    </div>
+    <div class="product-summary">
+      <p class="eyebrow eyebrow-marker"><a href="/${p.section.key}/">${esc(p.section.label)}</a></p>
+      <h1>${esc(p.title)}</h1>
+      <div class="chips">${chips(p, false)}</div>
+      ${p.cross ? `<p class="product-cross">${esc(p.cross)}</p>` : ''}
+      <p class="product-lede">${esc(p.description)}</p>
+${p.facts.length ? `      <dl class="spec">\n${p.facts.map(([k, v]) => `        <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n      </dl>` : ''}
+      <div class="product-actions">
+        <a class="btn" href="#details">Read the details</a>
+        <a class="btn btn-ghost" href="/${p.section.key}/">All ${esc(p.section.short.toLowerCase())}</a>
+      </div>
+      <dl class="product-meta">
+${metaRows.map(([k, v]) => `        <div><dt>${k}</dt><dd>${v}</dd></div>`).join('\n')}
+      </dl>
+    </div>
   </div>
-</header>
-<div class="container block entry-layout">
-  <article class="entry">
-${p.facts.length ? `    <dl class="facts">\n${p.facts.map(([k, v]) => `      <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n    </dl>` : ''}
+  <div class="container block entry-layout" id="details">
+    <h2 class="tab-title">Description</h2>
     ${toc}
     <div class="prose entry-body">
 ${p.html}
     </div>
-  </article>
-  <nav class="pager" aria-label="More in ${esc(p.section.label)}">
-    ${older ? `<a class="card" href="${older.url}"><span>← Older</span><strong>${esc(older.title)}</strong></a>` : '<span></span>'}
-    ${newer ? `<a class="card" href="${newer.url}"><span>Newer →</span><strong>${esc(newer.title)}</strong></a>` : '<span></span>'}
-  </nav>
-</div>`,
+  </div>
+</article>
+${related.length ? `<section class="block container related" aria-labelledby="related-title">
+  <div class="section-head section-head-rule"><h2 id="related-title">More ${esc(p.section.short.toLowerCase())}</h2></div>
+  <div class="card-grid">
+${related.map(card).join('\n')}
+  </div>
+</section>` : ''}`,
     });
   });
 
@@ -456,6 +504,7 @@ ${urls.map((u) => `  <url><loc>${xml(absUrl(u.loc))}</loc>${u.lastmod ? `<lastmo
     siteTitle: config.title,
     siteUrl,
     fontsUrl: design.fontsUrl,
+    defaultMode: design.defaultMode,
     sections: sections.map(({ key, label, icon }) => ({ key, label, icon })),
     owner: config.repo.owner,
     repo: config.repo.name,

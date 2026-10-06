@@ -511,11 +511,16 @@ function viewPages() {
 // ---------------------------------------------------------------------------
 
 function previewDocument(kind) {
-  const light = (() => { try { return localStorage.getItem('apex-light') === 'true'; } catch { return false; } })();
+  const light = (() => {
+    try {
+      const saved = localStorage.getItem('apex-light');
+      return saved === null ? config.defaultMode === 'light' : saved === 'true';
+    } catch { return config.defaultMode === 'light'; }
+  })();
   const header = kind === 'post'
     ? '<header class="preview-header"><h1 id="pvTitle"></h1><div class="entry-meta" id="pvMeta"></div><div class="chips" id="pvTags"></div></header>'
     : '';
-  return `<!DOCTYPE html><html class="${light ? 'light' : ''}"><head><meta charset="utf-8">
+  return `<!DOCTYPE html><html class="${light ? 'light' : 'dark'}"><head><meta charset="utf-8">
 <base href="${h(siteBase)}">
 <link rel="stylesheet" href="${h(config.fontsUrl || '')}">
 <link rel="stylesheet" href="assets/style.css?v=${h(config.version || '')}">
