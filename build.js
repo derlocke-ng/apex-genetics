@@ -333,12 +333,8 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
       ? `<details class="toc card"><summary>On this page</summary><nav>${p.toc.map((h) => `<a href="#${h.id}" class="toc-depth-${h.depth}">${esc(h.text)}</a>`).join('')}</nav></details>`
       : '';
     const related = siblings.filter((x) => x !== p).slice(0, 3);
-    const metaRows = [
-      ['Category', `<a href="/${p.section.key}/">${esc(p.section.label)}</a>`],
-      ...(p.tags.length ? [['Tags', p.tags.map((t) => esc(t)).join(', ')]] : []),
-      ...(p.date ? [['Published', `<time datetime="${p.date}">${formatDate(p.date)}</time>`]] : []),
-      ['Reading time', `${p.readingTime} min`],
-    ];
+    // The cross gets its own labelled block, so it is not repeated in the spec rows.
+    const specFacts = p.facts.filter(([label]) => label !== 'Cross');
     renderPage(`${p.section.key}/${p.slug}/index.html`, {
       title: p.title,
       description: p.description,
@@ -349,10 +345,7 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
         ...(p.date ? [['article:published_time', p.date]] : []),
         ...p.tags.map((t) => ['article:tag', t]),
       ],
-      content: `<nav class="breadcrumb container" aria-label="Breadcrumb">
-  <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
-</nav>
-<article class="entry">
+      content: `<article class="entry">
   <div class="container product">
     <div class="product-media">
       <div class="specimen">
@@ -363,26 +356,30 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
       </div>
     </div>
     <div class="product-summary">
-      <p class="eyebrow eyebrow-marker"><a href="/${p.section.key}/">${esc(p.section.label)}</a></p>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
+      </nav>
       <h1>${esc(p.title)}</h1>
-      ${p.tags.length || p.draft || p.scheduled ? `<div class="chips">${chips(p)}</div>` : ''}
-      ${p.cross ? `<p class="product-cross">${esc(p.cross)}</p>` : ''}
       <p class="product-lede">${esc(p.description)}</p>
-${p.facts.length ? `      <dl class="spec">\n${p.facts.map(([k, v]) => `        <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n      </dl>` : ''}
+${specFacts.length || p.cross ? `      <div class="product-specs">
+${specFacts.length ? `        <dl class="spec">\n${specFacts.map(([k, v]) => `          <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n        </dl>` : ''}
+${p.cross ? `        <div class="product-cross"><p class="label">Cross</p><p class="product-cross-value">${esc(p.cross)}</p></div>` : ''}
+      </div>` : ''}
+${p.tags.length || p.draft || p.scheduled ? `      <div class="product-tags"><p class="label">Tags</p><div class="chips">${chips(p)}</div></div>` : ''}
       <div class="product-actions">
         <a class="btn" href="#details">Read the details</a>
         <a class="btn btn-ghost" href="/${p.section.key}/">All ${esc(p.section.short.toLowerCase())}</a>
       </div>
-      <dl class="product-meta">
-${metaRows.map(([k, v]) => `        <div><dt>${k}</dt><dd>${v}</dd></div>`).join('\n')}
-      </dl>
+      <p class="product-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time>` : ''}<span>${p.readingTime} min read</span></p>
     </div>
   </div>
-  <div class="container block entry-layout" id="details">
-    <h2 class="tab-title">Description</h2>
-    ${toc}
-    <div class="prose entry-body">
+  <div class="entry-details" id="details">
+    <div class="container block entry-layout">
+      <h2 class="tab-title">Description</h2>
+      ${toc}
+      <div class="prose entry-body">
 ${p.html}
+      </div>
     </div>
   </div>
 </article>

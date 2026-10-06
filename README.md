@@ -17,8 +17,9 @@ framework, hosted on GitHub Pages.
 >   attributes on black; bold uppercase Montserrat, 2px outlines and hovers that fill black. Only the look is
 >   reproduced, none of that site's logos, photos or text.
 >
-> Every entry page is laid out like a product page (breadcrumb, specimen panel, tags, cross, spec table,
-> description, related entries).
+> Every entry page is laid out like a doctorschoice.farm product page: specimen panel (edge to edge on phones),
+> then breadcrumb, title, lede, spec rows, the cross, tags, actions and date, and the description below a
+> full-width divider, followed by related entries.
 
 ## Content
 

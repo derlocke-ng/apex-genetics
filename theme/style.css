@@ -86,12 +86,12 @@ a.entry-card:hover .card-icon{transform:scale(1.06)}
 .empty{color:var(--muted)}
 
 /* ---- entry page ---- */
-.breadcrumb{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;padding-block:1.5rem 1.25rem;font:500 .78rem/1.4 var(--font-label,var(--font-body));color:var(--muted)}
+.breadcrumb{display:flex;flex-wrap:wrap;gap:.25rem .6rem;align-items:center;margin:0 0 1.25rem;font:500 .78rem/1.4 var(--font-label,var(--font-body));color:var(--muted)}
 .breadcrumb a{color:var(--muted);text-decoration:none}
 .breadcrumb a:hover{color:var(--text)}
 .breadcrumb [aria-hidden]{opacity:.5}
 .breadcrumb [aria-current]{color:var(--text)}
-.product{display:grid;gap:clamp(2rem,5vw,4.5rem);grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;padding-bottom:3rem}
+.product{display:grid;gap:clamp(2rem,5vw,4.5rem);grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;padding-block:clamp(1.5rem,4vw,3rem)}
 .specimen{position:relative;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;padding:2rem;border:1px solid var(--border);border-radius:var(--radius);background:
   radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 62%),var(--placeholder,var(--surface2));text-align:center;overflow:hidden}
 .specimen::after{content:"";position:absolute;inset:1rem;border:1px solid color-mix(in srgb,var(--text) 8%,transparent);border-radius:calc(var(--radius) * .6);pointer-events:none}
@@ -102,21 +102,20 @@ a.entry-card:hover .card-icon{transform:scale(1.06)}
 .specimen-status{position:absolute;left:1.75rem;top:1.75rem;font:600 .65rem/1 var(--font-label,var(--font-body));letter-spacing:.12em;text-transform:uppercase;padding:.45rem .65rem;border-radius:var(--pill);border:1px solid color-mix(in srgb,var(--ok,var(--accent)) 40%,transparent);color:var(--ok,var(--accent));background:color-mix(in srgb,var(--bg) 60%,transparent)}
 .product-summary{padding-top:.5rem}
 .product-summary h1{font-size:clamp(2rem,4vw,3rem);font-weight:500;letter-spacing:-.025em;margin:0 0 1rem}
-.product-cross{font:500 .95rem var(--font-mono);margin:1.25rem 0 0}
 .product-lede{font-size:1.075rem;color:var(--muted);margin:1rem 0 1.75rem}
-.spec{margin:0 0 2rem;border-top:1px solid var(--border)}
+.product-specs,.product-tags{margin:0 0 2rem}
+.spec{margin:0;border-top:1px solid var(--border)}
 .spec div{display:grid;grid-template-columns:minmax(7rem,.45fr) 1fr;gap:1rem;padding:.8rem 0;border-bottom:1px solid var(--border)}
 .spec dt{font:600 .68rem var(--font-label,var(--font-body));letter-spacing:.12em;text-transform:uppercase;color:var(--muted);align-self:center}
 .spec dd{margin:0;font-weight:500}
-.product-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:2rem}
-.product-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(9rem,1fr));gap:1rem;margin:0;padding-top:1.5rem;border-top:1px solid var(--border);font-size:.875rem}
-.product-meta div{display:flex;flex-direction:column;gap:.2rem}
-.product-meta dt{font:600 .65rem var(--font-label,var(--font-body));letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.product-meta dd{margin:0}
-.product-meta a{color:var(--text);text-decoration-color:color-mix(in srgb,var(--text) 30%,transparent)}
-.product-meta a:hover{color:var(--accent)}
+.product-cross{margin-top:1.25rem}
+.product-cross .label,.product-tags .label{margin:0 0 .5rem;color:var(--muted)}
+.product-cross-value{margin:0;font:500 .95rem/1.5 var(--font-mono)}
+.product-actions{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem}
+.product-meta{display:flex;flex-wrap:wrap;margin:0;color:var(--muted);font-size:.875rem}
+.product-meta>*+*::before{content:"·";margin:0 .6rem;color:var(--marker,var(--accent))}
 @media (max-width:860px){.product{grid-template-columns:minmax(0,1fr)}.specimen{aspect-ratio:16/10}}
-.entry-layout{border-top:1px solid var(--border)}
+.entry-details{border-top:1px solid var(--border)}
 .entry-layout>.prose>:first-child{margin-top:0}
 .tab-title{display:flex;align-items:center;gap:.6rem;font:600 .72rem/1 var(--font-label,var(--font-body));letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 2rem}
 .tab-title::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--marker,var(--accent))}
