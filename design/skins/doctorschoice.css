@@ -1,7 +1,8 @@
 /* Skin for the `doctorschoice` preset, measured from doctorschoice.farm:
    black header/hero/footer, white page, #FF0000 markers and primary buttons
    (#C00712 on hover and for red text on white), #E6E6E6 media panels,
-   #F8F5EF bands, #C8C8C8 / #2A2A2A on black. Montserrat throughout:
+   #F8F5EF bands, #2A2A2A secondary text and dividers, #C8C8C8 only for
+   attributes on black (nav, hero copy and footer print are #FFFFFF). Montserrat throughout:
    800 uppercase headings, 12px/800/.08em buttons with 2px borders,
    12-14px/600-700/.08em labels. Hovers fill black, never red.
    Loaded after theme/style.css when design.preset is "doctorschoice". */
@@ -16,28 +17,37 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 /* ---- labels ---- */
 .label,.eyebrow{font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
 .eyebrow{color:var(--marker)}
-.eyebrow-plain{color:var(--text);font-size:.75rem}
+.eyebrow-plain{color:var(--text)}
 .eyebrow-marker{gap:.75rem}
 .eyebrow-marker::before{width:12px;height:12px;border-radius:0}
 
-/* ---- header ---- */
-.site-header{-webkit-backdrop-filter:none;backdrop-filter:none}
-.site-header .container{width:100%;max-width:none;min-height:80px;padding-inline:0 clamp(1rem,3vw,2.5rem);gap:clamp(1rem,3vw,2.5rem)}
+/* ---- header: not sticky on the reference (it scrolls away), 122px tall, logo block
+   full height, white 700 caps links spanning the bar with a 4px #FF0000 bar on hover ---- */
+.site-header{position:relative;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+.site-header .container{width:100%;max-width:none;min-height:clamp(122px,6.3542vw,162.7px);padding-inline:0 clamp(1rem,2.5vw,2.5rem);gap:clamp(.75rem,2.5vw - 12px,2.5rem)}
 .brand{align-self:stretch;gap:0;font:800 .95rem/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
-.brand-mark{align-self:stretch;width:auto;height:auto;min-width:80px;border-radius:0;background:var(--marker);box-shadow:none;font-size:1.75rem}
+.brand-mark{align-self:stretch;width:auto;height:auto;min-width:84px;border-radius:0;background:var(--marker);box-shadow:none;font-size:2rem}
 .brand-name{padding-inline:1.25rem}
-.nav a{padding:.5rem .9rem;font-size:.75rem;font-weight:600;letter-spacing:.1em}
-.nav a.active::after{left:.9rem;right:.9rem;bottom:0;width:auto;height:2px;margin:0;border-radius:0}
-.icon-btn{color:var(--hd-text)}
+.nav{align-self:stretch;align-items:stretch;margin-left:0}
+.header-tools{margin-left:auto}
+.nav ul{align-items:stretch;gap:0}
+.nav li{display:flex}
+.nav a{--nav-x:clamp(6px,1.6vw - 10px,18px);display:flex;align-items:center;flex:1;padding:0 var(--nav-x);color:var(--hd-text);font-size:clamp(12px,.9722vw,14px);font-weight:700;letter-spacing:.08em;line-height:1.43}
+.nav a::after,.nav a.active::after{content:"";position:absolute;left:var(--nav-x);right:var(--nav-x);top:auto;bottom:0;width:auto;height:4px;margin:0;border-radius:0;background:var(--marker);opacity:0}
+.nav a:hover::after,.nav a:focus-visible::after,.nav a.active::after{opacity:1}
+.icon-btn{width:44px;height:44px;color:var(--hd-text)}
+.site-header .icon{width:24px;height:24px}
 .icon-btn:hover{background:none;color:var(--marker)}
-@media (max-width:480px){
-  .site-header .container{min-height:64px;gap:.5rem;padding-right:.5rem}
-  .brand-mark{min-width:64px;font-size:1.4rem}
-  .brand-name{padding-inline:.9rem;font-size:.85rem}
-}
 @media (max-width:1100px){
-  .nav a{padding:.9rem .25rem;font-size:.8rem}
-  .nav a.active::after{left:auto;right:.25rem;top:50%;bottom:auto;width:12px;height:12px;margin-top:-6px}
+  .site-header .container{min-height:83px}
+  .brand-mark{min-width:57px;font-size:1.5rem}
+  .nav{padding:.5rem 1.5rem 1rem}
+  .nav a{min-height:56px;padding:0 0 0 1.25rem;border-bottom-color:var(--hd-border);font-size:1.25rem;font-weight:800;letter-spacing:-.01em}
+  .nav a::after,.nav a.active::after{left:0;right:auto;top:14px;bottom:14px;width:4px;height:auto}
+}
+@media (max-width:480px){
+  .site-header .container{gap:.5rem;padding-right:.5rem}
+  .brand-name{padding-inline:.9rem;font-size:.85rem}
 }
 
 /* ---- buttons ---- */
@@ -57,7 +67,7 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 .hero{padding:clamp(3.5rem,7vw,6rem) 0;background:var(--hd-bg)}
 .hero-grid{align-items:center}
 .hero h1{max-width:14ch;font-size:clamp(2.25rem,4.2vw,3.75rem);font-weight:800;line-height:.95;letter-spacing:-.03em;text-transform:uppercase}
-.hero-text{font-size:1rem;font-weight:500;line-height:1.6}
+.hero-text,.page-hero .hero-text{color:var(--hd-text);font-size:1rem;font-weight:500;line-height:1.6}
 .hero-panel{border-radius:0;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
 .hero-panel-title{color:var(--hd-text);font-size:.75rem}
 .hero-count{font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:.75rem}
@@ -89,13 +99,13 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 a.tile{padding:1.25rem 1.25rem 1.5rem;border:2px solid var(--text);border-radius:0;background:transparent}
 a.card.tile:hover{transform:none;box-shadow:none;border-color:var(--text);background:var(--text);color:var(--bg)}
 .tile-icon{display:none}
-.tile h3{font-size:1.125rem;letter-spacing:-.01em}
+.tile h3{font-size:1.25rem;letter-spacing:-.02em}
 .tile p{color:inherit;font-size:.875rem;font-weight:500;line-height:1.43}
 .tile-count{font-size:.75rem;color:var(--accent)}
 a.tile:hover .tile-count{color:var(--marker)}
 
 /* ---- journal cards: no box, grey media panel, outlined button ---- */
-.card-grid{gap:2.5rem 1rem}
+.card-grid{gap:2.5rem 1rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
 a.entry-card{gap:14px;overflow:visible;border:0;border-radius:0;background:transparent}
 a.card.entry-card:hover{transform:none;box-shadow:none}
 .card-thumb{border:0;background:var(--placeholder)}
@@ -107,7 +117,7 @@ a.card.entry-card:hover{transform:none;box-shadow:none}
 .card-kicker span,.card-kicker span:not(:last-child)::after{color:inherit}
 .entry-card h3{font-size:1.125rem;line-height:1.22;letter-spacing:-.01em;text-transform:uppercase;transition:color .15s}
 a.entry-card:hover h3{color:var(--accent)}
-.card-cross{color:var(--accent);font:600 .75rem/1.33 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.card-cross{color:var(--text);font:500 .75rem/1.33 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
 .card-text{color:var(--text);font-size:.875rem;font-weight:500;line-height:1.43}
 .entry-card .chips{margin:0}
 .view-btn{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:auto;padding:0 22px;border:2px solid var(--text);color:var(--text);font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em;text-transform:uppercase;transition:background .15s,color .15s}
@@ -124,7 +134,7 @@ a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
 .specimen-name{font-weight:800;letter-spacing:-.02em}
 .specimen-status{left:1rem;top:1rem;padding:.4rem .6rem;border:0;border-radius:0;background:var(--marker);color:#fff}
 .product-summary h1{font-weight:800;line-height:1;letter-spacing:-.02em;text-transform:uppercase}
-.product-cross{color:var(--accent);font:700 .875rem var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.product-cross{color:var(--accent);font:700 .875rem/1.43 var(--font-label);letter-spacing:.04em;text-transform:uppercase}
 .product-lede{color:var(--text);font-size:1rem;font-weight:500}
 .spec{border-top:2px solid var(--text)}
 .spec dt{color:var(--text);font-size:.75rem;letter-spacing:.08em}
@@ -158,12 +168,12 @@ a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
 .site-footer .brand{flex-direction:column;align-items:flex-start;gap:1rem}
 .site-footer .brand-mark{width:84px;height:84px;min-width:0;font-size:2.5rem}
 .site-footer .brand-name{padding:0}
-.footer-tagline{max-width:34ch;color:var(--hd-muted);font-size:.75rem;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
+.footer-tagline{max-width:34ch;color:var(--hd-text);font-size:.75rem;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
 .footer-cols{gap:2rem clamp(2rem,6vw,5rem)}
 .footer-col{gap:0}
 .footer-col h2{margin:0 0 6px;color:var(--hd-text);font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
 .site-footer .footer-col a{color:var(--hd-text);font-weight:600;letter-spacing:-.01em;line-height:1.75}
 .site-footer a:hover,.site-footer .footer-col a:hover{color:var(--marker)}
-.footer-legal{max-width:none;color:var(--hd-muted);font-size:.75rem;font-weight:500;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
+.footer-legal{max-width:none;color:var(--hd-text);font-size:.75rem;font-weight:500;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
 
 .not-found h1{font-weight:800;text-transform:uppercase}

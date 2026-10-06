@@ -10,10 +10,12 @@ framework, hosted on GitHub Pages.
 >
 > - **`apex`** (default): deep forest green and warm ivory with champagne-gold accents, Fraunces headings and
 >   Inter text. Hairline borders, quiet surfaces, gold only for small accents. Light mode is a cream paper.
-> - **`doctorschoice`**: modelled on [doctorschoice.farm](https://doctorschoice.farm/). Black header, hero and
->   footer, a white page, `#FF0000` square markers and primary buttons (`#C00712` on hover and for red text),
->   `#E6E6E6` media panels, `#F8F5EF` bands, `#C8C8C8`/`#2A2A2A` on black, bold uppercase Montserrat, 2px
->   outlines and hovers that fill black. Only the look is reproduced, none of that site's logos, photos or text.
+> - **`doctorschoice`**: modelled on [doctorschoice.farm](https://doctorschoice.farm/). A 122px black header that
+>   scrolls away, with white bold caps links and a 4px `#FF0000` bar on hover; black hero and footer with white
+>   copy; a white page with black text (`#2A2A2A` for secondary text); `#FF0000` square markers and primary
+>   buttons (`#C00712` on hover and for red text); `#E6E6E6` media panels, `#F8F5EF` bands, `#C8C8C8` only for
+>   attributes on black; bold uppercase Montserrat, 2px outlines and hovers that fill black. Only the look is
+>   reproduced, none of that site's logos, photos or text.
 >
 > Every entry page is laid out like a product page (breadcrumb, specimen panel, tags, cross, spec table,
 > description, related entries).
