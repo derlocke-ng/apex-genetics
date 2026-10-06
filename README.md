@@ -40,14 +40,38 @@ Everything lives in `content/posts/*.md` (edit it in the admin at `/admin/` or b
 Entries appear at `/<section>/<slug>/`. **Article** entries are laid out for reading (title, lede, meta,
 then the text). **Specimen** entries (a plant, cut or seed lot) get an image panel and a spec sheet.
 
-Optional front matter, shown on any entry that has it:
+Optional front matter, shown on any entry that has it (all of it can also be filled in under
+**Plant profile & details** in the admin):
 
-- Spec sheet: `strain`, `cross`, `generation`, `status`, `stage`, `sex`, `quantity`, `source`, `phenotype`,
-  `flowering`, `yield` (each with its own line icon).
-- Tastes and effects, shown as colored icon tiles: `tastes: [citrus, pine, earthy]`,
-  `effects: [relaxed, giggly]`. About 80 common terms have an icon and color (see `lib/traits.js`); any other
-  word still gets a tile. Add or change terms in `site.json`:
-  `"traits": { "tastes": { "skunk": { "icon": "wind", "color": "#C9CFD6" } } }`.
+```yaml
+strain: Sample Strain
+cross: Mother A × Male B
+genotype: sativa-dominant
+sativa: 70
+growth: fast
+height: compact, 60-90 cm
+branching: heavy lateral
+flowering: 8 weeks
+tastes: [citrus, pine]
+effects: [relaxed, giggly]
+smell-in-veg: pine
+```
+
+- Identity: `strain`, `cross`, `generation`, `status`, `stage`, `sex`, `quantity`, `source`.
+- Genotype: `genotype` takes indica, indica-dominant, balanced hybrid, sativa-dominant or sativa; `sativa`
+  (or `indica`) takes an exact percentage.
+- Scales, each shown as a 1–5 meter: `growth`, `height`, `branching`, `internodes`, `stretch`, `yield`,
+  `resin`. The first word sets the level ("very fast", "heavy lateral", "tight", "low, about 1.5x") and the
+  whole value is shown as written.
+- Text: `flowering`, `leaves`, `resistance`, `phenotype`.
+- Any other key becomes a row of its own: `smell-in-veg: pine` shows as "Smell in veg: Pine".
+- Front matter has no comments: everything after the colon is the value.
+- The genotype draws an indica–sativa spectrum, and plant entries show a leaf shaped by it: broad leaflets
+  for indica, more and narrower ones for sativa. A word places it roughly; only a percentage is printed.
+- Scale words are in `lib/profile.js`; values without one (`branching: Christmas tree`, `height: 120 cm`)
+  are shown as text.
+- Tastes and effects terms are in `lib/traits.js`. Any other word still gets a tile; add or change terms in
+  `site.json`: `"traits": { "tastes": { "skunk": { "icon": "wind", "color": "#C9CFD6" } } }`.
 
 Sections are configured in `site.json`: `label`, `short`, `singular`, `blurb`, `icon` (an icon name from
 `design/icons`), `color` (the tile color) and `layout` (`article`, the default, or `specimen`).

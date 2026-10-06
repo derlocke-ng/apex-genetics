@@ -11,6 +11,8 @@ import { Marked } from './vendor/marked.esm.js';
 import {
   sealVault, openVault, WrongPasswordError, passwordProblems, generatePassword, DEFAULT_ITERATIONS,
 } from './lib/vault.js';
+import { PLANT_FACTS, PLANT_TRAITS, SUGGESTIONS, extraKeys, isReserved } from './lib/profile.js';
+import { traitList, SUGGESTED } from './lib/traits.js';
 
 const PATHS = {
   posts: 'content/posts/',
@@ -28,6 +30,26 @@ const DRAFT_PREFIX = 'kb-draft:';
 const MIME = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', svg: 'image/svg+xml' };
 
 const render = createMarkdown(Marked);
+
+// Plant profile fields (lib/profile.js), edited in the "Plant profile & details" panel.
+const PROFILE_FIELDS = [
+  ['genotype', 'Genotype'], ['sativa', 'Sativa %'],
+  ...PLANT_FACTS.map(([k, label]) => [k, label]), ['cross', 'Cross'],
+  ...PLANT_TRAITS.map(([k, label]) => [k, label]),
+];
+const asText = (v) => (Array.isArray(v) ? v.join(', ') : String(v ?? ''));
+const asScalar = (v) => (/^-?\d+(\.\d+)?$/.test(v) ? Number(v) : v);
+const profilePanel = (data, open) => `
+    <details class="profile-panel"${open ? ' open' : ''}>
+      <summary>Plant profile &amp; details <small>optional, shown on the entry page</small></summary>
+      <div class="profile-grid">
+        ${PROFILE_FIELDS.map(([k, label]) => `<label class="field${k === 'sativa' ? ' field-narrow' : ''}">${h(label)}<input name="pf-${k}"${k === 'sativa' ? ' type="number" min="0" max="100" step="1"' : ''}${SUGGESTIONS[k] ? ` list="pf-list-${k}"` : ''} autocomplete="off"></label>`).join('\n        ')}
+        ${['tastes', 'effects'].map((kind) => `<label class="field field-wide">${kind === 'tastes' ? 'Tastes like' : 'Effects'} <small>(comma separated)</small><input name="pf-${kind}" autocomplete="off" spellcheck="false">
+          <span class="tag-suggestions">${SUGGESTED[kind].map((t) => `<button type="button" class="tag" data-trait="${kind}" data-term="${h(t)}">${h(t)}</button>`).join('')}</span></label>`).join('\n        ')}
+        <label class="field field-full">More details <small>(one per line, like “Smell in veg: pine” or “Light: 300 W LED”)</small><textarea name="pf-more" rows="3" spellcheck="false"></textarea></label>
+      </div>
+      ${Object.entries(SUGGESTIONS).map(([k, words]) => `<datalist id="pf-list-${k}">${words.map((w) => `<option value="${h(w)}">`).join('')}</datalist>`).join('')}
+    </details>`;
 const siteBase = new URL('../', location.href).href;
 const app = document.getElementById('app');
 
@@ -615,6 +637,9 @@ function viewEditor({ path, kind }) {
       <label class="field field-wide">Description <small>(optional, used for previews &amp; search engines)</small><input name="description" maxlength="300"></label>
       <label class="check"><input type="checkbox" name="draft"> Draft <small>(not published)</small></label>
     </div>`}
+    ${kind === 'post' && !isRaw ? profilePanel(data, sectionOf(data.type).layout === 'specimen'
+      || PROFILE_FIELDS.some(([k]) => asText(data[k]).trim()) || traitList(data.tastes).length > 0
+      || traitList(data.effects).length > 0 || extraKeys(data).length > 0) : ''}
     <div class="md-toolbar" role="toolbar" aria-label="Formatting">
       <button type="button" data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
       <button type="button" data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
@@ -664,6 +689,10 @@ function viewEditor({ path, kind }) {
         field('date').value = normalizeDate(d.date);
         field('type').value = sectionOf(d.type).key;
         field('tags').value = splitTags(d.tags).join(', ');
+        for (const [k] of PROFILE_FIELDS) field(`pf-${k}`).value = asText(d[k]);
+        field('pf-tastes').value = traitList(d.tastes).join(', ');
+        field('pf-effects').value = traitList(d.effects).join(', ');
+        field('pf-more').value = extraKeys(d).map((k) => `${k}: ${asText(d[k])}`).join('\n');
       } else {
         field('menu').checked = d.menu === true;
         field('order').value = d.order ?? '';
@@ -681,6 +710,23 @@ function viewEditor({ path, kind }) {
       next.date = field('date').value;
       next.type = field('type').value || undefined;
       next.tags = splitTags(field('tags').value);
+      for (const [k] of PROFILE_FIELDS) {
+        const v = field(`pf-${k}`).value.trim();
+        next[k] = v === '' ? undefined : asScalar(v);
+      }
+      for (const k of ['tastes', 'effects']) {
+        const list = traitList(field(`pf-${k}`).value);
+        next[k] = list.length ? list : undefined;
+      }
+      // "More details": one "Name: value" per line. Existing keys keep their spelling and place in
+      // the file (cleared here, set again below); new names become lowercase slugs.
+      const existing = new Set(extraKeys(data));
+      for (const k of existing) next[k] = undefined;
+      for (const line of field('pf-more').value.split('\n')) {
+        const m = line.match(/^\s*([^:]+?)\s*:\s*(.+?)\s*$/);
+        const key = m && (existing.has(m[1]) ? m[1] : slugify(m[1]));
+        if (key && !isReserved(key)) next[key] = asScalar(m[2]);
+      }
     } else {
       next.menu = field('menu').checked;
       const order = field('order').value.trim();
@@ -789,6 +835,16 @@ function viewEditor({ path, kind }) {
       });
     }
   } catch { /* ignore corrupt drafts */ }
+
+  // ---- tastes / effects suggestions ----
+  form.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-trait]');
+    if (!chip) return;
+    const input = field(`pf-${chip.dataset.trait}`);
+    const list = traitList(input.value);
+    if (!list.some((t) => t.toLowerCase() === chip.dataset.term)) input.value = [...list, chip.dataset.term].join(', ');
+    onChange();
+  });
 
   // ---- slug follows the title until edited by hand ----
   if (!isRaw) {

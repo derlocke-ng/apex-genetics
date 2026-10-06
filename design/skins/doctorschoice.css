@@ -142,7 +142,17 @@ a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
 .product-summary{padding-top:0}
 .product-summary h1{margin:0 0 1.5rem;font-size:clamp(2.25rem,3.2vw,3rem);font-weight:800;line-height:1;letter-spacing:-.02em;text-transform:uppercase}
 .product-lede{margin:0 0 1.75rem;color:color-mix(in srgb,var(--text) 93%,var(--bg));font-size:1rem;font-weight:500;line-height:1.5}
-.product-specs,.product-traits,.product-tags{margin:0 0 1.75rem;padding-top:1.75rem;border-top:1px solid var(--surface2)}
+.product-specs,.product-profile,.product-traits,.product-tags{margin:0 0 1.75rem;padding-top:1.75rem;border-top:1px solid var(--surface2)}
+.product-profile>.label{margin-bottom:1rem;color:var(--text);font:800 .75rem/1.4 var(--font-label);letter-spacing:.12em}
+.genotype-head .icon{width:18px;height:18px;color:var(--text)}
+.genotype-name{font:800 .875rem/1.3 var(--font-display);text-transform:uppercase}
+.genotype-split{color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.spectrum{height:8px;border-radius:0}
+.spectrum-marker{width:4px;height:22px;margin:-11px 0 0 -2px;border-radius:0;background:var(--text);box-shadow:none}
+.spectrum-ends{color:var(--text);font:500 .75rem/1 var(--font-label);letter-spacing:.14em}
+.spec-profile dd{justify-content:flex-end}
+.meter i{width:10px;height:10px;border-radius:0;background:var(--surface2)}
+.meter i.on{background:var(--text)}
 .spec{border:0}
 .spec div{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:.6rem 0;border:0}
 .spec dt{gap:1.125rem;color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.14em}

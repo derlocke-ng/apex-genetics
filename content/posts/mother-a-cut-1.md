@@ -5,6 +5,8 @@ type: cuts
 tags: [cut, clone]
 description: "Sample cut listing."
 strain: Sample Strain
+sativa: 35
+rooted-in: 9 days, aero cloner
 quantity: 6
 status: Rooted
 ---

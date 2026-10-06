@@ -113,6 +113,21 @@ a.entry-card:hover .card-thumb .icon-tile{transform:scale(1.05)}
 .product-cross{margin-top:1.25rem}
 .product-cross .label,.product-tags .label,.traits .label{display:flex;align-items:center;gap:.6rem;margin:0 0 .5rem;color:var(--muted)}
 .product-cross-value{margin:0;font:500 .95rem/1.5 var(--font-mono)}
+/* plant profile: indica-sativa spectrum, 5-step meters for scale traits, plain rows for the rest */
+.product-profile{margin:0 0 2rem}
+.product-profile>.label{margin:0 0 .85rem;color:var(--muted)}
+.genotype{margin:0 0 1.5rem}
+.genotype-head{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem;margin:0 0 .75rem}
+.genotype-head .icon{width:16px;height:16px;color:var(--muted)}
+.genotype-name{font-weight:600}
+.genotype-split{margin-left:auto;color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+.spectrum{position:relative;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--from),var(--to))}
+.spectrum-marker{position:absolute;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--bg);box-shadow:0 0 0 3px var(--text)}
+.spectrum-ends{display:flex;justify-content:space-between;margin:.6rem 0 0;color:var(--muted);font:600 .66rem/1 var(--font-label,var(--font-body));letter-spacing:.12em;text-transform:uppercase}
+.spec-profile dd{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem .75rem}
+.meter{display:inline-flex;gap:3px}
+.meter i{width:12px;height:6px;border-radius:999px;background:var(--surface2)}
+.meter i.on{background:var(--accent)}
 .product-traits{display:grid;gap:1.5rem;margin:0 0 2rem}
 .traits .label{margin-bottom:.85rem}
 .trait-list{display:flex;flex-wrap:wrap;gap:.75rem 1.75rem;margin:0;padding:0;list-style:none}

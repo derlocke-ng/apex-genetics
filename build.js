@@ -17,20 +17,14 @@ import {
 import { createMarkdown, rewriteRootUrls } from './lib/markdown.js';
 import { createDesign } from './lib/design.js';
 import { createIcons, safeColor } from './lib/icons.js';
-import { traitList, resolveTrait, TRAIT_KINDS } from './lib/traits.js';
+import { traitList, resolveTrait, TRAIT_KINDS, PALETTE } from './lib/traits.js';
+import { profileOf } from './lib/profile.js';
+import { leafSvg } from './lib/leaf.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const at = (...p) => path.join(ROOT, ...p);
 
 const RESERVED = new Set(['index', 'archive', '404', 'feed', 'sitemap', 'robots', 'search', 'admin', 'posts', 'assets', 'media']);
-
-// Optional front matter shown as a "spec sheet" on an entry page: [key, label, icon].
-const FACTS = [
-  ['strain', 'Strain', 'leaf'], ['cross', 'Cross', 'git-merge'], ['generation', 'Generation', 'layers'],
-  ['status', 'Status', 'activity'], ['stage', 'Stage', 'hourglass'], ['sex', 'Sex', 'venus-and-mars'],
-  ['quantity', 'Quantity', 'hash'], ['source', 'Source', 'map-pin'], ['phenotype', 'Phenotype', 'fingerprint'],
-  ['flowering', 'Flowering', 'sun'], ['yield', 'Yield', 'scale'],
-];
 
 // Section layouts: "article" (reading) or "specimen" (a plant, cut or seed lot with a spec sheet).
 const LAYOUTS = new Set(['article', 'specimen']);
@@ -117,9 +111,9 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       scheduled: Boolean(date && date > now),
       type,
       section,
-      cross: data.cross ? String(data.cross) : '',
-      facts: FACTS.filter(([k]) => data[k] !== undefined && data[k] !== '').map(([k, label, icon]) => [label, String(data[k]), icon]),
-      traits: Object.keys(TRAIT_KINDS)
+      // Plant profile (lib/profile.js): identity facts, cross, genotype, growth traits, extra rows.
+      ...(({ facts, cross, genotype, traits, extra }) => ({ facts, cross, genotype, plantTraits: traits, extra }))(profileOf(data)),
+      sensory: Object.keys(TRAIT_KINDS)
         .map((kind) => [kind, traitList(data[kind]).map((t) => resolveTrait(kind, t, (config.traits || {})[kind]))])
         .filter(([, list]) => list.length),
       status: data.status ? String(data.status) : '',
@@ -206,14 +200,18 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   // Icon tiles: a line icon on a colored square (see .icon-tile in design/base.css).
   // A section icon that is not an icon name (e.g. an emoji) is shown as text instead.
   const icons = createIcons(at('design/icons'));
-  const tile = (icon, color, cls = '') =>
-    `<span class="icon-tile${cls ? ` ${cls}` : ''}" style="--tile:${safeColor(color, 'var(--accent)')}" aria-hidden="true">${icons.svg(icon) ?? `<span class="icon-text">${esc(icon)}</span>`}</span>`;
+  const tile = (icon, color, cls = '', inner = null) =>
+    `<span class="icon-tile${cls ? ` ${cls}` : ''}" style="--tile:${safeColor(color, 'var(--accent)')}" aria-hidden="true">${inner ?? icons.svg(icon) ?? `<span class="icon-text">${esc(icon)}</span>`}</span>`;
   const sectionTile = (x, cls = '') => tile(x.icon, x.color, cls);
+  // Plants with a known genotype show a leaf drawn for it (broad indica to narrow sativa).
+  const plantTile = (p, cls = '') => (p.genotype?.sativa != null
+    ? tile('', p.section.color, cls, leafSvg(p.genotype.sativa))
+    : sectionTile(p.section, cls));
   for (const x of sections) {
     if (/^[a-z0-9-]+$/.test(x.icon) && !icons.has(x.icon)) warnings.push(`site.json: section "${x.key}" uses icon "${x.icon}", which is not in design/icons`);
   }
   for (const p of posts) {
-    for (const [, list] of p.traits) {
+    for (const [, list] of p.sensory) {
       for (const t of list) if (!icons.has(t.icon)) warnings.push(`content/posts/${p.slug}.md: icon "${t.icon}" for "${t.label}" is not in design/icons`);
     }
   }
@@ -281,7 +279,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   // ---- cards -----------------------------------------------------------------
   const isSpecimen = (p) => p.section.layout === 'specimen';
   const card = (p, { cls = '', attrs = '' } = {}) => `<a class="card entry-card ${isSpecimen(p) ? 'is-specimen' : 'is-article'}${cls ? ` ${cls}` : ''}" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}"${attrs}>
-  <div class="card-thumb">${sectionTile(p.section, 'icon-tile-lg')}${p.status ? `<span class="card-status">${esc(p.status)}</span>` : ''}</div>
+  <div class="card-thumb">${isSpecimen(p) ? plantTile(p, 'icon-tile-lg') : sectionTile(p.section, 'icon-tile-lg')}${p.status ? `<span class="card-status">${esc(p.status)}</span>` : ''}</div>
   <div class="card-body">
     <p class="card-kicker label"><span>${esc(p.section.singular)}</span>${p.date ? `<time datetime="${p.date}">${formatDate(p.date, shortFmt)}</time>` : ''}</p>
     <h3>${esc(p.title)}</h3>
@@ -377,9 +375,9 @@ ${list.map((x) => card(x)).join('\n') || `<p class="empty">No ${esc(x.label.toLo
       ? `<details class="toc card"><summary>On this page</summary><nav>${p.toc.map((h) => `<a href="#${h.id}" class="toc-depth-${h.depth}">${esc(h.text)}</a>`).join('')}</nav></details>`
       : '';
     const related = siblings.filter((x) => x !== p).slice(0, 3);
-    // Shared pieces. The cross gets its own labelled block, and articles show the status in
-    // their kicker, so neither is repeated as a spec row.
-    const specFacts = p.facts.filter(([label]) => label !== 'Cross' && (isSpecimen(p) || label !== 'Status'));
+    // Shared pieces. Articles show the status in their kicker, so it is not repeated as a row.
+    const specFacts = p.facts.filter(([label]) => isSpecimen(p) || label !== 'Status');
+    const specimenName = (p.facts.find(([label]) => label === 'Strain') || [])[1] || p.cross || (p.facts[0] || [])[1] || '';
     const crumbs = `<nav class="breadcrumb" aria-label="Breadcrumb">
         <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
       </nav>`;
@@ -387,8 +385,25 @@ ${list.map((x) => card(x)).join('\n') || `<p class="empty">No ${esc(x.label.toLo
 ${specFacts.length ? `        <dl class="spec">\n${specFacts.map(([k, v, icon]) => `          <div><dt>${icons.svg(icon) ?? ''}<span>${esc(k)}</span></dt><dd>${esc(v)}</dd></div>`).join('\n')}\n        </dl>` : ''}
 ${p.cross ? `        <div class="product-cross"><p class="label">${icons.svg('git-merge') ?? ''}<span>Cross</span></p><p class="product-cross-value">${esc(p.cross)}</p></div>` : ''}
       </div>` : '';
-    const traits = p.traits.length ? `<div class="product-traits">
-${p.traits.map(([kind, list]) => `        <div class="traits"><p class="label">${TRAIT_KINDS[kind]}</p><ul class="trait-list">${list.map((t) => `<li class="trait">${tile(t.icon, t.color)}<span>${esc(t.label)}</span></li>`).join('')}</ul></div>`).join('\n')}
+    const row = (label, icon, value) => `<div><dt>${icons.svg(icon) ?? ''}<span>${esc(label)}</span></dt><dd>${value}</dd></div>`;
+    const meter = (level) => `<span class="meter" role="img" aria-label="${level} of 5">${[1, 2, 3, 4, 5].map((i) => `<i${i <= level ? ' class="on"' : ''}></i>`).join('')}</span>`;
+    const g = p.genotype;
+    const profileRows = [
+      ...(g && g.sativa == null ? [row('Genotype', 'dna', esc(g.label))] : []),
+      ...p.plantTraits.map((t) => row(t.label, t.icon, `${t.level ? meter(t.level) : ''}<span class="trait-value">${esc(t.value)}</span>`)),
+      ...p.extra.map(([label, value, icon]) => row(label, icon, esc(value))),
+    ];
+    const profile = (g && g.sativa != null) || profileRows.length ? `<div class="product-profile">
+        <p class="label">${g || p.plantTraits.length ? 'Plant profile' : 'Details'}</p>
+${g && g.sativa != null ? `        <div class="genotype">
+          <p class="genotype-head">${icons.svg('dna') ?? ''}<span class="genotype-name">${esc(g.label)}</span>${g.exact ? `<span class="genotype-split">${100 - g.sativa}% indica · ${g.sativa}% sativa</span>` : ''}</p>
+          <div class="spectrum" style="--from:${PALETTE.periwinkle};--to:${PALETTE.fern}" role="img" aria-label="${esc(g.label)}: ${g.sativa}% sativa"><span class="spectrum-marker" style="left:${g.sativa}%"></span></div>
+          <p class="spectrum-ends"><span>Indica</span><span>Sativa</span></p>
+        </div>` : ''}
+${profileRows.length ? `        <dl class="spec spec-profile">\n${profileRows.map((r) => `          ${r}`).join('\n')}\n        </dl>` : ''}
+      </div>` : '';
+    const traits = p.sensory.length ? `<div class="product-traits">
+${p.sensory.map(([kind, list]) => `        <div class="traits"><p class="label">${TRAIT_KINDS[kind]}</p><ul class="trait-list">${list.map((t) => `<li class="trait">${tile(t.icon, t.color)}<span>${esc(t.label)}</span></li>`).join('')}</ul></div>`).join('\n')}
       </div>` : '';
     const tags = p.tags.length || p.draft || p.scheduled ? `<div class="product-tags"><p class="label">Tags</p><div class="chips">${chips(p)}</div></div>` : '';
     const meta = `<p class="product-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time>` : ''}<span>${p.readingTime} min read</span></p>`;
@@ -407,9 +422,9 @@ ${p.html}
   <div class="container product">
     <div class="product-media">
       <div class="specimen">
-        ${sectionTile(p.section, 'icon-tile-xl')}
-        <span class="specimen-kind">${esc(p.section.singular)}</span>
-        ${p.facts.length ? `<span class="specimen-name">${esc(p.facts[0][1])}</span>` : ''}
+        ${plantTile(p, 'icon-tile-xl')}
+        <span class="specimen-kind">${esc(p.section.singular)}${p.genotype ? ` · ${esc(p.genotype.label)}` : ''}</span>
+        ${specimenName ? `<span class="specimen-name">${esc(specimenName)}</span>` : ''}
         ${p.status ? `<span class="specimen-status">${esc(p.status)}</span>` : ''}
       </div>
     </div>
@@ -418,6 +433,7 @@ ${p.html}
       <h1>${esc(p.title)}</h1>
       <p class="product-lede">${esc(p.description)}</p>
       ${spec}
+      ${profile}
       ${traits}
       ${tags}
       ${meta}
@@ -432,7 +448,7 @@ ${p.html}
       <h1>${esc(p.title)}</h1>
       <p class="product-lede">${esc(p.description)}</p>
       ${meta}
-      ${spec || traits || tags ? `<div class="article-facts">${spec}${traits}${tags}</div>` : ''}
+      ${spec || profile || traits || tags ? `<div class="article-facts">${spec}${profile}${traits}${tags}</div>` : ''}
     </div>
   </header>
   ${details('')}
@@ -497,7 +513,7 @@ ${list.map((p) => card(p, { cls: 'archive-post-link', attrs: ` data-slug="${p.se
 
   write('search.json', JSON.stringify(posts.map((p) => ({
     s: `${p.section.key}/${p.slug}`,
-    t: `${p.title} ${p.section.label} ${p.tags.join(' ')} ${p.facts.map(([, v]) => v).join(' ')} ${p.description} ${markdownToText(p.body)}`.toLowerCase().replace(/\s+/g, ' '),
+    t: `${p.title} ${p.section.label} ${p.tags.join(' ')} ${[...p.facts, ...p.extra].map(([, v]) => v).join(' ')} ${p.cross} ${p.genotype?.label ?? ''} ${p.plantTraits.map((x) => x.value).join(' ')} ${p.sensory.flatMap(([, list]) => list.map((x) => x.label)).join(' ')} ${p.description} ${markdownToText(p.body)}`.toLowerCase().replace(/\s+/g, ' '),
   }))));
 
   // ---- pages ---------------------------------------------------------------
@@ -568,14 +584,14 @@ ${urls.map((u) => `  <url><loc>${xml(absUrl(u.loc))}</loc>${u.lastmod ? `<lastmo
 
   // ---- admin ---------------------------------------------------------------
   fs.cpSync(at('admin'), path.join(out, 'admin'), { recursive: true });
-  for (const f of ['content.js', 'markdown.js', 'vault.js']) write(`admin/lib/${f}`, fs.readFileSync(at('lib', f)));
+  for (const f of ['content.js', 'markdown.js', 'vault.js', 'profile.js', 'traits.js']) write(`admin/lib/${f}`, fs.readFileSync(at('lib', f)));
   write('admin/vendor/marked.esm.js', fs.readFileSync(at('node_modules/marked/lib/marked.esm.js'), 'utf8').replace(/\n\/\/# sourceMappingURL=.*$/m, ''));
   write('admin/config.json', JSON.stringify({
     siteTitle: config.title,
     siteUrl,
     fontsUrl: design.fontsUrl,
     defaultMode: design.defaultMode,
-    sections: sections.map(({ key, label }) => ({ key, label })),
+    sections: sections.map(({ key, label, layout }) => ({ key, label, layout })),
     owner: config.repo.owner,
     repo: config.repo.name,
     branch: config.repo.branch || 'main',
