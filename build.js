@@ -71,7 +71,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   const year = String(new Date().getFullYear());
 
   const dateFmt = new Intl.DateTimeFormat(config.language, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-  const dayFmt = new Intl.DateTimeFormat(config.language, { month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const shortFmt = new Intl.DateTimeFormat(config.language, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const formatDate = (d, fmt = dateFmt) => (d ? fmt.format(new Date(`${d}T00:00:00Z`)) : '');
 
   const render = createMarkdown(Marked, {
@@ -160,7 +160,14 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   if (fs.existsSync(at('public'))) fs.cpSync(at('public'), out, { recursive: true });
 
   const design = createDesign(config.design);
-  const css = `${design.css}${fs.readFileSync(at('design/base.css'), 'utf8')}\n${fs.readFileSync(at('theme/style.css'), 'utf8')}`;
+  // Preset skin (design/skins/<preset>.css) goes last so it can restyle the site layout.
+  const skinFile = at('design/skins', `${design.skin}.css`);
+  const css = [
+    design.css,
+    fs.readFileSync(at('design/base.css'), 'utf8'),
+    fs.readFileSync(at('theme/style.css'), 'utf8'),
+    ...(fs.existsSync(skinFile) ? [fs.readFileSync(skinFile, 'utf8')] : []),
+  ].join('\n');
   const js = fs.readFileSync(at('theme/site.js'));
   const version = crypto.createHash('sha1').update(css).update(js).digest('hex').slice(0, 8);
   write('assets/style.css', css);
@@ -174,17 +181,11 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     ...(Array.isArray(config.nav) ? config.nav : []),
   ];
 
-  const chips = (p, kind = true) => [
-    ...(kind ? [`<span class="chip chip-accent">${esc(p.section.singular)}</span>`] : []),
-    ...(p.status ? [`<span class="chip chip-ok">${esc(p.status)}</span>`] : []),
-    ...p.tags.map((t) => `<span class="chip">${esc(t)}</span>`),
-  ].join('');
-
   const statusBadge = (p) =>
-    p.draft ? ' <span class="chip">draft</span>' : p.scheduled ? ' <span class="chip">scheduled</span>' : '';
+    p.draft ? '<span class="chip">draft</span>' : p.scheduled ? '<span class="chip">scheduled</span>' : '';
 
-  const entryMeta = (p) =>
-    `<div class="entry-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time> · ` : ''}${p.readingTime} min read${statusBadge(p)}</div>`;
+  // Status is shown on the thumbnail/specimen badge, so chips are just tags (plus draft/scheduled).
+  const chips = (p) => p.tags.map((t) => `<span class="chip">${esc(t)}</span>`).join('') + statusBadge(p);
 
   function renderPage(rel, { title, description = config.description, content, bodyClass = '', urlPath, meta = [], root }) {
     const depth = rel.split('/').length - 1;
@@ -213,9 +214,11 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     const vars = {
       lang: esc(config.language),
       defaultMode: design.defaultMode,
+      skin: esc(design.skin),
       pageTitle: esc(title ? `${title} · ${config.title}` : config.title),
       siteTitle: esc(config.title),
       description: esc(description),
+      siteDescription: esc(config.description),
       meta: metaTags.join('\n'),
       fontsUrl: esc(design.fontsUrl),
       themeColor: esc(design.themeColor.dark),
@@ -234,13 +237,14 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
 
   // ---- cards -----------------------------------------------------------------
   const card = (p) => `<a class="card entry-card" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}">
-  <div class="card-thumb"><span class="card-icon" aria-hidden="true">${esc(p.section.icon)}</span><span class="card-kind">${esc(p.section.singular)}</span></div>
+  <div class="card-thumb"><span class="card-icon" aria-hidden="true">${esc(p.section.icon)}</span>${p.status ? `<span class="card-status">${esc(p.status)}</span>` : ''}</div>
   <div class="card-body">
+    <p class="card-kicker label"><span>${esc(p.section.singular)}</span>${p.date ? `<time datetime="${p.date}">${formatDate(p.date, shortFmt)}</time>` : ''}</p>
     <h3>${esc(p.title)}</h3>
-    <div class="chips">${chips(p, false)}</div>
-    ${p.cross ? `<p class="card-cross">${esc(p.cross)}</p>` : `<p class="card-text">${esc(p.description)}</p>`}
-    ${entryMeta(p)}
-    <span class="view-btn">View ${esc(p.section.singular.toLowerCase())}</span>
+    ${p.cross ? `<p class="card-cross">${esc(p.cross)}</p>` : ''}
+    <p class="card-text">${esc(p.description)}</p>
+    ${p.tags.length || p.draft || p.scheduled ? `<div class="chips">${chips(p)}</div>` : ''}
+    <span class="view-btn">View ${esc(p.section.singular.toLowerCase())}<span class="arrow" aria-hidden="true">→</span></span>
   </div>
 </a>`;
 
@@ -260,11 +264,15 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
         ${(hero.cta || []).map((b, i) => `<a class="btn${i ? ' btn-ghost' : ''}" href="${esc(b.url)}">${esc(b.label)}</a>`).join('\n        ')}
       </div>
     </div>
-    <div class="hero-art" aria-hidden="true">
-      <span class="hero-art-icon">${esc(config.brandIcon || '🌿')}</span>
-      <span class="hero-art-count">${posts.length}</span>
-      <span class="hero-art-label">entries in the library</span>
-    </div>
+    <aside class="hero-panel" aria-label="The library at a glance">
+      <p class="label hero-panel-title"><span class="hero-panel-mark" aria-hidden="true">${esc(config.brandIcon || '🌿')}</span>The library</p>
+      <p class="hero-count"><span>${posts.length}</span> ${posts.length === 1 ? 'entry' : 'entries'}</p>
+      <dl class="hero-stats">
+        <div><dt>Sections</dt><dd>${sections.length}</dd></div>
+${posts[0] ? `        <div><dt>Latest</dt><dd><a href="${posts[0].url}">${esc(posts[0].title)}</a></dd></div>` : ''}
+${posts[0]?.date ? `        <div><dt>Updated</dt><dd><time datetime="${posts[0].date}">${formatDate(posts[0].date)}</time></dd></div>` : ''}
+      </dl>
+    </aside>
   </div>
 </section>
 ${hero.banner ? `<div class="promo-banner"><div class="container"><p>${esc(hero.banner)}</p></div></div>` : ''}
@@ -279,20 +287,20 @@ ${sections.map((x) => `    <a class="card tile" href="/${x.key}/">
       <span class="tile-icon" aria-hidden="true">${esc(x.icon)}</span>
       <h3>${esc(x.label)}</h3>
       <p>${esc(x.blurb)}</p>
-      <span class="tile-count">${postsBySection.get(x.key).length} ${postsBySection.get(x.key).length === 1 ? 'entry' : 'entries'} →</span>
+      <span class="tile-count label">${postsBySection.get(x.key).length} ${postsBySection.get(x.key).length === 1 ? 'entry' : 'entries'}<span class="arrow" aria-hidden="true">→</span></span>
     </a>`).join('\n')}
   </div>
 </section>
 <section class="block container" aria-labelledby="latest-title">
   <div class="section-head section-head-rule">
     <div><p class="eyebrow eyebrow-marker">Live breeding journal</p><h2 id="latest-title">Latest updates</h2></div>
-    <a href="/archive.html" class="btn btn-ghost">Browse the library →</a>
+    <a href="/archive.html" class="btn btn-ghost">Browse the library</a>
   </div>
   <div class="card-grid">
 ${homePosts.map(card).join('\n') || '<p class="empty">Nothing here yet.</p>'}
   </div>
 </section>
-${homeHtml ? `<section class="block container about"><div class="prose">\n${homeHtml}</div></section>` : ''}`,
+${homeHtml ? `<section class="block about"><div class="container"><div class="prose">\n${homeHtml}</div></div></section>` : ''}`,
   });
 
   // ---- sections ------------------------------------------------------------
@@ -305,7 +313,7 @@ ${homeHtml ? `<section class="block container about"><div class="prose">\n${home
       bodyClass: 'page-section',
       content: `<header class="page-hero">
   <div class="container">
-    <p class="eyebrow">${esc(x.icon)} ${esc(config.title)}</p>
+    <p class="eyebrow eyebrow-marker">${esc(config.title)} · ${list.length === 1 ? '1 entry' : `${list.length} entries`}</p>
     <h1>${esc(x.label)}</h1>
     ${x.blurb ? `<p class="hero-text">${esc(x.blurb)}</p>` : ''}
   </div>
@@ -357,7 +365,7 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
     <div class="product-summary">
       <p class="eyebrow eyebrow-marker"><a href="/${p.section.key}/">${esc(p.section.label)}</a></p>
       <h1>${esc(p.title)}</h1>
-      <div class="chips">${chips(p, false)}</div>
+      ${p.tags.length || p.draft || p.scheduled ? `<div class="chips">${chips(p)}</div>` : ''}
       ${p.cross ? `<p class="product-cross">${esc(p.cross)}</p>` : ''}
       <p class="product-lede">${esc(p.description)}</p>
 ${p.facts.length ? `      <dl class="spec">\n${p.facts.map(([k, v]) => `        <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n      </dl>` : ''}
@@ -402,7 +410,7 @@ ${related.map(card).join('\n')}
     bodyClass: 'page-archive',
     content: `<header class="page-hero">
   <div class="container">
-    <p class="eyebrow">📚 Library</p>
+    <p class="eyebrow eyebrow-marker">Library</p>
     <h1>Everything in one place</h1>
     <p class="hero-text">${plural(posts.length)}. Filter by section or search the full text.</p>
     <div class="search-box"><input type="search" id="archiveSearch" placeholder="Search strains, crosses, tutorials…" aria-label="Search" autocomplete="off"></div>
@@ -411,7 +419,7 @@ ${related.map(card).join('\n')}
 <div class="container block">
   <div class="tag-filter-buttons">
     <button class="tag-btn active" data-tag="all" aria-pressed="true">All</button>
-    ${sections.map((x) => `<button class="tag-btn" data-tag="${esc(x.key)}" aria-pressed="false">${esc(x.icon)} ${esc(x.short)} <span class="tag-count">${postsBySection.get(x.key).length}</span></button>`).join('\n    ')}
+    ${sections.map((x) => `<button class="tag-btn" data-tag="${esc(x.key)}" aria-pressed="false">${esc(x.short)} <span class="tag-count">${postsBySection.get(x.key).length}</span></button>`).join('\n    ')}
   </div>
   <div class="archive-content">
 ${[...years].map(([y, list]) => `<div class="archive-year">

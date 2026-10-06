@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { createDesign, PRESETS } from '../lib/design.js';
+
+const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 
 test('every preset produces variables, fonts and theme colors', () => {
   for (const preset of Object.keys(PRESETS)) {
@@ -8,6 +11,8 @@ test('every preset produces variables, fonts and theme colors', () => {
     assert.match(d.css, /:root\{--bg:/);
     assert.match(d.css, /:root\.(light|dark)\{--bg:/);
     assert.match(d.css, /--font-display:/);
+    assert.match(d.css, /--font-label:/);
+    assert.equal(d.skin, preset);
     assert.match(d.fontsUrl, /^https:\/\/fonts\.googleapis\.com\/css2\?family=/);
     assert.ok(d.themeColor.dark && d.themeColor.light);
   }
@@ -27,8 +32,24 @@ test('unknown presets and unsafe values are rejected', () => {
 test('the doctorschoice preset is light-first with always-black header tokens', () => {
   const d = createDesign({ preset: 'doctorschoice' });
   assert.equal(d.defaultMode, 'light');
-  assert.match(d.css, /^:root\{--bg:#f9f9f9;/);
-  assert.match(d.css, /:root\.dark\{--bg:#0a0a0a;/);
+  assert.match(d.css, /^:root\{--bg:#ffffff;/);
+  assert.match(d.css, /:root\.dark\{--bg:#000000;/);
   assert.match(d.css, /--hd-bg:#000000;/);
+  assert.match(d.css, /--marker:#ff0000;/);
+  assert.equal(d.themeColor.light, '#000000', 'browser chrome matches the black header');
+  assert.ok(fs.existsSync(new URL('../design/skins/doctorschoice.css', import.meta.url)), 'doctorschoice ships its skin');
   assert.equal(createDesign({ preset: 'apex' }).defaultMode, 'dark');
+});
+
+test('font roles that share a family request the union of their weights', () => {
+  const d = createDesign({ preset: 'doctorschoice' });
+  assert.match(d.fontsUrl, /family=Montserrat:wght@500;600;700;800&/);
+  assert.equal((d.fontsUrl.match(/family=Montserrat/g) || []).length, 1);
+});
+
+test('shared stylesheets take every color from the tokens', () => {
+  // Hard-coded colors in these files break every preset but the one they were written for.
+  for (const f of ['design/base.css', 'theme/style.css']) {
+    assert.deepEqual(read(f).match(/#[0-9a-f]{3,8}\b/gi), null, `${f} hard-codes a color`);
+  }
 });

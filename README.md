@@ -6,12 +6,17 @@ Forked from [derlocke-blog](https://github.com/derlocke-ng/derlocke-blog) (the K
 generator and browser admin) and redesigned as a website rather than a blog. Static HTML, no
 framework, hosted on GitHub Pages.
 
-> The design is modelled on [doctorschoice.farm](https://doctorschoice.farm/) (the `doctorschoice` preset):
-> black header/hero/footer with a red brand block, signal red `#c00712` accents, a white page, bold uppercase
-> Montserrat, thin outlined boxes, IBM Plex Mono tags and product-style cards. Every entry page is laid out like
-> a shop product page (breadcrumb, specimen panel, tags, cross, spec table, description, related entries).
-> Only the look is reproduced, none of that site's logos, photos or text. The original `apex` (forest green /
-> gold) preset is still available: set `design.preset` in `site.json`.
+> Two looks ship with the site; pick one with `design.preset` in `site.json`:
+>
+> - **`apex`** (default): deep forest green and warm ivory with champagne-gold accents, Fraunces headings and
+>   Inter text. Hairline borders, quiet surfaces, gold only for small accents. Light mode is a cream paper.
+> - **`doctorschoice`**: modelled on [doctorschoice.farm](https://doctorschoice.farm/). Black header, hero and
+>   footer, a white page, `#FF0000` square markers and primary buttons (`#C00712` on hover and for red text),
+>   `#E6E6E6` media panels, `#F8F5EF` bands, `#C8C8C8`/`#2A2A2A` on black, bold uppercase Montserrat, 2px
+>   outlines and hovers that fill black. Only the look is reproduced, none of that site's logos, photos or text.
+>
+> Every entry page is laid out like a product page (breadcrumb, specimen panel, tags, cross, spec table,
+> description, related entries).
 
 ## Content
 
@@ -51,12 +56,21 @@ npm run vault    # set up the admin password (see below)
 The look is a reusable template, so [derlocke-blog](https://github.com/derlocke-ng/derlocke-blog) can use it too:
 
 - `lib/design.js`: `createDesign({ preset, tokens, light, fonts })` returns the CSS variables for dark and
-  light mode, the Google Fonts URL and the `theme-color` values. Presets: `doctorschoice` (default here, light page), `apex` and `terminal`. Header, hero and footer colors come from the optional `hd*` tokens.
+  light mode, the Google Fonts URL, the `theme-color` values and the preset's `skin` name. Presets: `apex`,
+  `doctorschoice` (light page) and `terminal`. Besides the core palette there are optional tokens: `band`
+  (alternate section background), `marker` (small squares and dots), `placeholder` (media panels), `ok`
+  (status) and `hd*` (header, hero and footer bars). Font roles: `display`, `body`, `label` (eyebrows, chips,
+  meta) and `mono`.
 - `design/base.css`: neutral components (header, footer, buttons, cards, chips, prose, code) that only use those variables.
+- `design/skins/<preset>.css` (optional): preset-specific restyling, loaded last. `doctorschoice` has one;
+  `apex` is simply the neutral look.
 
-To reuse it, copy those two files into the other project, prepend `createDesign(...).css` to `base.css`
-in its build step (see `build.js`), put `design.fontsUrl` into the layout, and add site-specific CSS
-afterwards (`theme/style.css` here). Override colors or fonts per site via `site.json`:
+`design/base.css` and `theme/style.css` must not hard-code colors (a test enforces it), so every preset renders
+correctly from its tokens. Put anything that only makes sense for one preset into that preset's skin.
+
+To reuse it, copy those files into the other project, prepend `createDesign(...).css` to `base.css`
+in its build step (see `build.js`), put `design.fontsUrl` into the layout, add site-specific CSS
+afterwards (`theme/style.css` here) and append `design/skins/${design.skin}.css` if it exists. Override colors or fonts per site via `site.json`:
 
 ```json
 "design": { "preset": "terminal", "tokens": { "accent": "#6c9fd1" }, "fonts": { "display": { "family": "Lora", "weights": "600" } } }

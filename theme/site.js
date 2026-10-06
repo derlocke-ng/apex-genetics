@@ -21,7 +21,6 @@
       root.classList.toggle('light', light);
       root.classList.toggle('dark', !light);
       if (meta) meta.setAttribute('content', light ? meta.dataset.light : meta.dataset.dark);
-      if (btn) btn.textContent = light ? '🌙' : '☀️';
     };
     apply(saved === null ? root.dataset.defaultMode === 'light' : saved === 'true');
     btn?.addEventListener('click', () => {

@@ -1,0 +1,169 @@
+/* Skin for the `doctorschoice` preset, measured from doctorschoice.farm:
+   black header/hero/footer, white page, #FF0000 markers and primary buttons
+   (#C00712 on hover and for red text on white), #E6E6E6 media panels,
+   #F8F5EF bands, #C8C8C8 / #2A2A2A on black. Montserrat throughout:
+   800 uppercase headings, 12px/800/.08em buttons with 2px borders,
+   12-14px/600-700/.08em labels. Hovers fill black, never red.
+   Loaded after theme/style.css when design.preset is "doctorschoice". */
+
+body{font-weight:500}
+h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
+.prose{font-size:1rem}
+.prose a{color:var(--text);text-decoration-color:var(--marker)}
+.prose a:hover{color:var(--accent)}
+.prose blockquote{font-style:normal;border-left-width:4px}
+
+/* ---- labels ---- */
+.label,.eyebrow{font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
+.eyebrow{color:var(--marker)}
+.eyebrow-plain{color:var(--text);font-size:.75rem}
+.eyebrow-marker{gap:.75rem}
+.eyebrow-marker::before{width:12px;height:12px;border-radius:0}
+
+/* ---- header ---- */
+.site-header{-webkit-backdrop-filter:none;backdrop-filter:none}
+.site-header .container{width:100%;max-width:none;min-height:80px;padding-inline:0 clamp(1rem,3vw,2.5rem);gap:clamp(1rem,3vw,2.5rem)}
+.brand{align-self:stretch;gap:0;font:800 .95rem/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
+.brand-mark{align-self:stretch;width:auto;height:auto;min-width:80px;border-radius:0;background:var(--marker);box-shadow:none;font-size:1.75rem}
+.brand-name{padding-inline:1.25rem}
+.nav a{padding:.5rem .9rem;font-size:.75rem;font-weight:600;letter-spacing:.1em}
+.nav a.active::after{left:.9rem;right:.9rem;bottom:0;width:auto;height:2px;margin:0;border-radius:0}
+.icon-btn{color:var(--hd-text)}
+.icon-btn:hover{background:none;color:var(--marker)}
+@media (max-width:480px){
+  .site-header .container{min-height:64px;gap:.5rem;padding-right:.5rem}
+  .brand-mark{min-width:64px;font-size:1.4rem}
+  .brand-name{padding-inline:.9rem;font-size:.85rem}
+}
+@media (max-width:1100px){
+  .nav a{padding:.9rem .25rem;font-size:.8rem}
+  .nav a.active::after{left:auto;right:.25rem;top:50%;bottom:auto;width:12px;height:12px;margin-top:-6px}
+}
+
+/* ---- buttons ---- */
+.btn{min-height:44px;padding:10px 22px;border:2px solid var(--marker);border-radius:0;background:var(--marker);color:#fff;font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em}
+.btn:hover{background:#c00712;border-color:#c00712;color:#fff}
+.btn-ghost{background:transparent;border-color:var(--text);color:var(--text)}
+.btn-ghost:hover{background:var(--text);border-color:var(--text);color:var(--bg)}
+.hero .btn-ghost{border-color:var(--hd-text);color:var(--hd-text)}
+.hero .btn-ghost:hover{background:var(--hd-text);border-color:var(--hd-text);color:var(--hd-bg)}
+
+/* ---- chips: plain uppercase text, separated by slashes ---- */
+.chips{gap:.4rem}
+.chip{padding:0;border:0;border-radius:0;background:none;color:var(--text);font:500 .75rem/1.33 var(--font-label);letter-spacing:.08em}
+.chip + .chip::before{content:"/";margin-right:.4rem;color:var(--muted)}
+
+/* ---- hero & page hero (always black) ---- */
+.hero{padding:clamp(3.5rem,7vw,6rem) 0;background:var(--hd-bg)}
+.hero-grid{align-items:center}
+.hero h1{max-width:14ch;font-size:clamp(2.25rem,4.2vw,3.75rem);font-weight:800;line-height:.95;letter-spacing:-.03em;text-transform:uppercase}
+.hero-text{font-size:1rem;font-weight:500;line-height:1.6}
+.hero-panel{border-radius:0;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+.hero-panel-title{color:var(--hd-text);font-size:.75rem}
+.hero-count{font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:.75rem}
+.hero-count span{font-weight:800;letter-spacing:-.03em}
+.hero-stats div{border-top-color:var(--hd-border)}
+.hero-stats a:hover{color:var(--marker)}
+
+.promo-banner{background:var(--marker);border:0}
+.promo-banner p{justify-content:flex-start;padding:1.1rem 0;color:#fff;font:800 clamp(1rem,2vw,1.375rem)/1.2 var(--font-display);letter-spacing:.01em;text-align:left}
+.promo-banner p::before{display:none}
+.promo-banner p::after{content:"→";width:auto;height:auto;background:none}
+
+.page-hero{background:var(--hd-bg)}
+.page-hero h1{font-weight:800;text-transform:uppercase;letter-spacing:-.02em}
+.page-hero .search-box input{border:2px solid var(--hd-text);border-radius:0;background:#fff;color:#000;font-weight:500}
+.page-hero .search-box input::placeholder{color:#6b6b6b}
+.page-hero .search-box input:focus{border-color:var(--marker);box-shadow:none}
+
+.pinned{border:2px solid var(--text);border-radius:0;background:var(--surface);font-weight:600}
+.pinned a{color:var(--accent)}
+
+/* ---- section heads ---- */
+.section-head h2{font-size:clamp(1.75rem,3vw,2.375rem);line-height:1.1}
+.section-head-center h2{font-size:1.5rem;text-transform:none}
+.section-head-rule{padding-bottom:13px;border-bottom:2px solid var(--text)}
+
+/* ---- category boxes ---- */
+.tile-grid{gap:.75rem}
+a.tile{padding:1.25rem 1.25rem 1.5rem;border:2px solid var(--text);border-radius:0;background:transparent}
+a.card.tile:hover{transform:none;box-shadow:none;border-color:var(--text);background:var(--text);color:var(--bg)}
+.tile-icon{display:none}
+.tile h3{font-size:1.125rem;letter-spacing:-.01em}
+.tile p{color:inherit;font-size:.875rem;font-weight:500;line-height:1.43}
+.tile-count{font-size:.75rem;color:var(--accent)}
+a.tile:hover .tile-count{color:var(--marker)}
+
+/* ---- journal cards: no box, grey media panel, outlined button ---- */
+.card-grid{gap:2.5rem 1rem}
+a.entry-card{gap:14px;overflow:visible;border:0;border-radius:0;background:transparent}
+a.card.entry-card:hover{transform:none;box-shadow:none}
+.card-thumb{border:0;background:var(--placeholder)}
+.card-icon{filter:none}
+.card-status{left:.75rem;top:.75rem;padding:.35rem .5rem;border-radius:0;background:var(--marker);color:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
+.card-body{gap:.5rem;padding:0}
+.card-kicker{align-items:center;gap:10px;color:var(--text);font:600 .75rem/1.33 var(--font-label);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.card-kicker::before{content:"";width:10px;height:10px;background:var(--marker);flex:none}
+.card-kicker span,.card-kicker span:not(:last-child)::after{color:inherit}
+.entry-card h3{font-size:1.125rem;line-height:1.22;letter-spacing:-.01em;text-transform:uppercase;transition:color .15s}
+a.entry-card:hover h3{color:var(--accent)}
+.card-cross{color:var(--accent);font:600 .75rem/1.33 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.card-text{color:var(--text);font-size:.875rem;font-weight:500;line-height:1.43}
+.entry-card .chips{margin:0}
+.view-btn{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:auto;padding:0 22px;border:2px solid var(--text);color:var(--text);font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em;text-transform:uppercase;transition:background .15s,color .15s}
+.view-btn .arrow{display:none}
+.card-body>:nth-last-child(2){margin-bottom:.75rem}
+a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
+
+/* ---- entry page ---- */
+.breadcrumb{font:600 .75rem/1.33 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.breadcrumb a:hover{color:var(--accent)}
+.specimen{border:0;border-radius:0;background:var(--placeholder)}
+.specimen::after{display:none}
+.specimen-kind{color:var(--text);font-size:.75rem;letter-spacing:.08em}
+.specimen-name{font-weight:800;letter-spacing:-.02em}
+.specimen-status{left:1rem;top:1rem;padding:.4rem .6rem;border:0;border-radius:0;background:var(--marker);color:#fff}
+.product-summary h1{font-weight:800;line-height:1;letter-spacing:-.02em;text-transform:uppercase}
+.product-cross{color:var(--accent);font:700 .875rem var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.product-lede{color:var(--text);font-size:1rem;font-weight:500}
+.spec{border-top:2px solid var(--text)}
+.spec dt{color:var(--text);font-size:.75rem;letter-spacing:.08em}
+.spec dd{font-weight:700}
+.product-meta dt{color:var(--text);font-size:.75rem;letter-spacing:.08em}
+.product-meta a{color:var(--text);text-decoration-color:var(--marker)}
+.entry-layout{border-top:2px solid var(--text)}
+.tab-title{gap:.75rem;color:var(--text);font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
+.tab-title::before{width:12px;height:12px;border-radius:0}
+.toc{border:2px solid var(--text);border-radius:0}
+.toc summary{color:var(--text);font-weight:700;letter-spacing:.08em}
+.toc a{color:var(--text);font-weight:500}
+.toc a:hover{color:var(--accent)}
+
+/* ---- home about band ---- */
+.about{border:0}
+.about .prose h2{font-size:clamp(1.75rem,3vw,2.375rem);text-transform:uppercase}
+
+/* ---- library ---- */
+.tag-filter-buttons{gap:.5rem}
+.tag-btn{min-height:44px;padding:0 18px;border:2px solid var(--text);border-radius:0;color:var(--text);font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em;text-transform:uppercase}
+.tag-btn:hover{border-color:var(--text);background:var(--text);color:var(--bg)}
+.tag-btn.active{border-color:var(--marker);background:var(--marker);color:#fff}
+.tag-count{font-weight:600;opacity:.7}
+.year-header{padding-bottom:13px;border-bottom:2px solid var(--text)}
+.year-title{font-size:1.5rem}
+.post-count{color:var(--text);font-weight:600;letter-spacing:.08em}
+
+/* ---- footer ---- */
+.site-footer{padding:3.5rem 0 2.5rem;color:var(--hd-text);font-size:1rem}
+.site-footer .brand{flex-direction:column;align-items:flex-start;gap:1rem}
+.site-footer .brand-mark{width:84px;height:84px;min-width:0;font-size:2.5rem}
+.site-footer .brand-name{padding:0}
+.footer-tagline{max-width:34ch;color:var(--hd-muted);font-size:.75rem;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
+.footer-cols{gap:2rem clamp(2rem,6vw,5rem)}
+.footer-col{gap:0}
+.footer-col h2{margin:0 0 6px;color:var(--hd-text);font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
+.site-footer .footer-col a{color:var(--hd-text);font-weight:600;letter-spacing:-.01em;line-height:1.75}
+.site-footer a:hover,.site-footer .footer-col a:hover{color:var(--marker)}
+.footer-legal{max-width:none;color:var(--hd-muted);font-size:.75rem;font-weight:500;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
+
+.not-found h1{font-weight:800;text-transform:uppercase}
