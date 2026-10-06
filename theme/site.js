@@ -22,7 +22,13 @@
       root.classList.toggle('dark', !light);
       if (meta) meta.setAttribute('content', light ? meta.dataset.light : meta.dataset.dark);
     };
-    apply(saved === null ? root.dataset.defaultMode === 'light' : saved === 'true');
+    // No saved choice: the preset's default; 'system' follows the OS and keeps following it.
+    const osDark = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const defaultLight = () => (root.dataset.defaultMode === 'system' ? !osDark?.matches : root.dataset.defaultMode === 'light');
+    apply(saved === null ? defaultLight() : saved === 'true');
+    osDark?.addEventListener?.('change', () => {
+      if (store.get('apex-light') === null) apply(defaultLight());
+    });
     btn?.addEventListener('click', () => {
       const light = !root.classList.contains('light');
       apply(light);

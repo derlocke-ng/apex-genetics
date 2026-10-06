@@ -71,11 +71,18 @@ test('entries use the layout of their section', () => {
   assert.doesNotMatch(read('index.html'), /View challenge/, 'article cards read, they do not "view"');
 });
 
-test('the logo and favicon replace the emoji', () => {
+test('the brand kit: lockup, favicons, manifest, self-hosted font', () => {
   const home = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-  assert.match(home, /<span class="brand-mark"[^>]*><svg class="logo"/);
-  assert.match(home, /<link rel="icon" href="[^"]*assets\/favicon\.svg/);
-  assert.match(fs.readFileSync(path.join(out, 'assets/favicon.svg'), 'utf8'), /^<svg[^>]*><rect /);
+  assert.match(home, /<a class="brand" href="[^"]*" aria-label="Apex Genetics"><span class="brand-mark"[^>]*><svg class="logo"/);
+  assert.match(home, /<span class="brand-name" aria-hidden="true"><svg class="wordmark"/);
+  for (const link of ['rel="icon" href="./favicon.ico"', 'rel="icon" href="./favicon.svg"', 'rel="apple-touch-icon"', 'rel="manifest" href="./site.webmanifest"']) {
+    assert.ok(home.includes(link), `missing <link ${link}>`);
+  }
+  assert.match(home, /<link rel="preload" href="\.\/assets\/fonts\/Archivo-Variable\.woff2" as="font"/);
+  assert.ok(fs.existsSync(path.join(out, 'assets/fonts/Archivo-Variable.woff2')));
+  // The site lives under a sub-path on GitHub Pages, so the manifest's icons must be relative.
+  const manifest = JSON.parse(fs.readFileSync(path.join(out, 'site.webmanifest'), 'utf8'));
+  for (const icon of manifest.icons) assert.ok(!icon.src.startsWith('/'), `${icon.src} is root-absolute`);
 });
 
 test('the plant profile renders: spectrum, meters, free rows', () => {

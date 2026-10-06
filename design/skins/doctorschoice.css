@@ -28,7 +28,8 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 .brand{align-self:stretch;gap:0;font:800 .95rem/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
 .brand-mark{align-self:stretch;width:auto;height:auto;min-width:84px;border-radius:0;background:var(--marker);box-shadow:none;color:#fff;font-size:2rem}
 .site-header .brand-mark .logo{height:46%}
-.brand-name{padding-inline:1.25rem}
+.brand-name{padding-inline:1.25rem;color:var(--hd-text)}
+.site-header .wordmark{height:clamp(11px,.9vw,13px)}
 .nav{align-self:stretch;align-items:stretch;margin-left:0}
 .header-tools{margin-left:auto}
 .nav ul{align-items:stretch;gap:0}
@@ -48,7 +49,8 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 }
 @media (max-width:480px){
   .site-header .container{gap:.5rem;padding-right:.5rem}
-  .brand-name{padding-inline:.9rem;font-size:.85rem}
+  .brand-name{padding-inline:.75rem}
+  .site-header .wordmark{height:9px}
 }
 
 /* ---- buttons ---- */
@@ -208,6 +210,7 @@ a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
 .site-footer .brand{flex-direction:column;align-items:flex-start;gap:1rem}
 .site-footer .brand-mark{width:84px;height:84px;min-width:0;font-size:2.5rem}
 .site-footer .brand-name{padding:0}
+.site-footer .wordmark{height:14px}
 .footer-tagline{max-width:34ch;color:var(--hd-text);font-size:.75rem;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
 .footer-cols{gap:2rem clamp(2rem,6vw,5rem)}
 .footer-col{gap:0}
