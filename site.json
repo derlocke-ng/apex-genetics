@@ -35,7 +35,7 @@
       }
     ]
   },
-  "footer": "© {year} derlocke.net · <a href=\"mailto:derlocke@derlocke.net\">Contact</a> · <a href=\"/feed.xml\">RSS</a> · Powered by <a href=\"https://github.com/derlocke-ng/kiwi-blog\">🥝 Kiwi Blog</a>",
+  "footer": "© {year} derlocke.net · <a href=\"mailto:info@derlocke.net\">Contact</a> · <a href=\"/feed.xml\">RSS</a> · Powered by <a href=\"https://github.com/derlocke-ng/kiwi-blog\">🥝 Kiwi Blog</a>",
   "repo": {
     "owner": "derlocke-ng",
     "name": "derlocke-blog",
