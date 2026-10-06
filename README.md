@@ -6,9 +6,12 @@ Forked from [derlocke-blog](https://github.com/derlocke-ng/derlocke-blog) (the K
 generator and browser admin) and redesigned as a website rather than a blog. Static HTML, no
 framework, hosted on GitHub Pages.
 
-> The design follows a dark forest-green / cream / gold palette with Fraunces, Inter and JetBrains Mono.
-> It is an interpretation, not a copy, of the look of doctorschoice.farm (that site could not be
-> fetched while building this). Tweak it in `site.json` under `design`.
+> The design is modelled on [doctorschoice.farm](https://doctorschoice.farm/) (the `doctorschoice` preset):
+> black header/hero/footer with a red brand block, signal red `#c00712` accents, a white page, bold uppercase
+> Montserrat, thin outlined boxes, IBM Plex Mono tags and product-style cards. Every entry page is laid out like
+> a shop product page (breadcrumb, specimen panel, tags, cross, spec table, description, related entries).
+> Only the look is reproduced, none of that site's logos, photos or text. The original `apex` (forest green /
+> gold) preset is still available: set `design.preset` in `site.json`.
 
 ## Content
 
@@ -48,7 +51,7 @@ npm run vault    # set up the admin password (see below)
 The look is a reusable template, so [derlocke-blog](https://github.com/derlocke-ng/derlocke-blog) can use it too:
 
 - `lib/design.js`: `createDesign({ preset, tokens, light, fonts })` returns the CSS variables for dark and
-  light mode, the Google Fonts URL and the `theme-color` values. Presets: `apex` and `terminal`.
+  light mode, the Google Fonts URL and the `theme-color` values. Presets: `doctorschoice` (default here, light page), `apex` and `terminal`. Header, hero and footer colors come from the optional `hd*` tokens.
 - `design/base.css`: neutral components (header, footer, buttons, cards, chips, prose, code) that only use those variables.
 
 To reuse it, copy those two files into the other project, prepend `createDesign(...).css` to `base.css`

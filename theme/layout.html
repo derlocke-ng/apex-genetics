@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{lang}}">
+<html lang="{{lang}}" data-default-mode="{{defaultMode}}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="{{fontsUrl}}">
   <link rel="stylesheet" href="/assets/style.css?v={{version}}">
-  <script>try{if(localStorage.getItem('apex-light')==='true')document.documentElement.classList.add('light')}catch(e){}</script>
+  <script>try{var s=localStorage.getItem('apex-light');if(s!==null)document.documentElement.classList.add(s==='true'?'light':'dark')}catch(e){}</script>
   <script src="/assets/site.js?v={{version}}" defer></script>
 </head>
 <body class="{{bodyClass}}">
@@ -22,14 +22,22 @@
 
   <header class="site-header">
     <div class="container">
-      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">{{brandIcon}}</span>{{siteTitle}}</a>
-      <button class="icon-btn menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mainNav">☰</button>
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">{{brandIcon}}</span><span class="brand-name">{{siteTitle}}</span></a>
       <nav class="nav" id="mainNav" aria-label="Main">
         <ul>
 {{menu}}
         </ul>
-        <button id="themeToggle" class="icon-btn" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">☀️</button>
       </nav>
+      <div class="header-tools">
+        <a class="icon-btn" href="/archive.html" title="Search the library" aria-label="Search the library">
+          <svg class="icon" viewBox="0 0 24 24.5" aria-hidden="true"><path fill="currentColor" d="M20 10.5C20 5.25 15.75 1 10.5 1S1 5.25 1 10.5 5.25 20 10.5 20v1C4.7 21 0 16.3 0 10.5S4.7 0 10.5 0 21 4.7 21 10.5 16.3 21 10.5 21v-1c5.25 0 9.5-4.25 9.5-9.5Z"/><path fill="currentColor" transform="translate(17 17.5)" d="M.15.15a.5.5 0 0 1 .7 0l6 6a.5.5 0 0 1-.7.7l-6-6a.5.5 0 0 1 0-.7Z"/></svg>
+        </a>
+        <button id="themeToggle" class="icon-btn" title="Toggle dark/light mode" aria-label="Toggle dark/light mode">☀️</button>
+        <button class="icon-btn menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mainNav">
+          <svg class="icon icon-open" viewBox="0 0 27.5 19" aria-hidden="true"><path fill="currentColor" d="M0 0h27.5v1H0zM0 9h27.5v1H0zM0 18h27.5v1H0z"/></svg>
+          <svg class="icon icon-close" viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" d="M2 2l16 16M18 2L2 18"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -38,9 +46,12 @@
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-grid">
-      <div class="footer-info">{{footer}}</div>
-      <div class="footer-links">{{footerLinks}}</div>
+    <div class="container">
+      <div class="footer-top">
+        <a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true">{{brandIcon}}</span><span class="brand-name">{{siteTitle}}</span></a>
+        <div class="footer-cols">{{footerLinks}}</div>
+      </div>
+      <div class="footer-legal">{{footer}}</div>
     </div>
   </footer>
 </body>

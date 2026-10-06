@@ -15,14 +15,17 @@
   function initTheme() {
     const btn = $('#themeToggle');
     const meta = $('meta[name="theme-color"]');
+    const root = document.documentElement;
+    const saved = store.get('apex-light');
     const apply = (light) => {
-      document.documentElement.classList.toggle('light', light);
+      root.classList.toggle('light', light);
+      root.classList.toggle('dark', !light);
       if (meta) meta.setAttribute('content', light ? meta.dataset.light : meta.dataset.dark);
       if (btn) btn.textContent = light ? '🌙' : '☀️';
     };
-    apply(store.get('apex-light') === 'true');
+    apply(saved === null ? root.dataset.defaultMode === 'light' : saved === 'true');
     btn?.addEventListener('click', () => {
-      const light = !document.documentElement.classList.contains('light');
+      const light = !root.classList.contains('light');
       apply(light);
       store.set('apex-light', String(light));
     });
@@ -35,7 +38,6 @@
     if (!toggle || !nav) return;
     const set = (open) => {
       nav.classList.toggle('active', open);
-      toggle.textContent = open ? '✕' : '☰';
       toggle.setAttribute('aria-expanded', String(open));
     };
     toggle.addEventListener('click', (e) => {
