@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Static site generator: content/*.md + theme/ + site.json -> dist/
+// Static site generator: content/*.md + design/ + theme/ + site.json -> dist/
 //
 //   node build.js            production build (drafts and future posts hidden)
 //   node build.js --drafts   include drafts and scheduled posts (local preview)
@@ -15,24 +15,33 @@ import {
   normalizeDate, today, escapeHtml as esc, slugify,
 } from './lib/content.js';
 import { createMarkdown, rewriteRootUrls } from './lib/markdown.js';
+import { createDesign } from './lib/design.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const at = (...p) => path.join(ROOT, ...p);
 
 const RESERVED = new Set(['index', 'archive', '404', 'feed', 'sitemap', 'robots', 'search', 'admin', 'posts', 'assets', 'media']);
 
+// Optional front matter shown as a "spec sheet" on an entry page.
+const FACTS = [
+  ['strain', 'Strain'], ['cross', 'Cross'], ['generation', 'Generation'], ['status', 'Status'],
+  ['stage', 'Stage'], ['sex', 'Sex'], ['quantity', 'Quantity'], ['source', 'Source'],
+  ['phenotype', 'Phenotype'], ['flowering', 'Flowering'], ['yield', 'Yield'],
+];
+
 const DEFAULTS = {
-  title: 'My Blog',
+  title: 'My Site',
   description: '',
   url: '',
   language: 'en',
   author: '',
-  prompt: { command: 'cd', path: '~' },
-  homePosts: 10,
+  design: { preset: 'apex' },
+  hero: { eyebrow: '', title: '', text: '', cta: [] },
+  sections: [{ key: 'entries', label: 'Entries', short: 'Entries', singular: 'Entry', icon: '🌱', blurb: '' }],
+  homePosts: 6,
   feedPosts: 20,
   nav: [],
-  dock: null,
-  footer: '© {year} · Powered by 🥝 Kiwi Blog',
+  footer: '© {year}',
   repo: { owner: '', name: '', branch: 'main' },
 };
 
@@ -47,7 +56,14 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   } catch (err) {
     throw new Error(`site.json is not valid JSON: ${err.message}`);
   }
-  config.prompt = { ...DEFAULTS.prompt, ...config.prompt };
+  config.design = { ...DEFAULTS.design, ...config.design };
+  config.hero = { ...DEFAULTS.hero, ...config.hero };
+  const sections = (Array.isArray(config.sections) && config.sections.length ? config.sections : DEFAULTS.sections)
+    .map((x) => ({ short: x.label, singular: x.label, icon: '🌱', blurb: '', ...x }));
+  const sectionByKey = new Map(sections.map((x) => [x.key, x]));
+  for (const x of sections) {
+    if (x.key !== slugify(x.key) || RESERVED.has(x.key)) throw new Error(`site.json: section key "${x.key}" must be a URL-friendly name that is not reserved`);
+  }
   config.repo = { ...DEFAULTS.repo, ...config.repo };
   const siteUrl = String(config.url || '').replace(/\/+$/, '');
   const basePath = siteUrl ? new URL(siteUrl + '/').pathname : '/';
@@ -81,6 +97,9 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     if (slug !== slugify(slug)) warnings.push(`content/posts/${slug}.md: file name is not URL-friendly (expected "${slugify(slug)}.md")`);
     const date = normalizeDate(data.date);
     if (!date) warnings.push(`content/posts/${slug}.md: missing or invalid "date" (use YYYY-MM-DD)`);
+    const type = String(data.type || '');
+    const section = sectionByKey.get(type) || sections[0];
+    if (!sectionByKey.has(type)) warnings.push(`content/posts/${slug}.md: "type" is "${type}", expected one of ${sections.map((x) => x.key).join(', ')}; filed under ${section.key}`);
     return {
       slug,
       title: String(data.title || slug),
@@ -89,9 +108,13 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       description: String(data.description || excerpt(body)),
       draft: data.draft === true,
       scheduled: Boolean(date && date > now),
+      type,
+      section,
+      facts: FACTS.filter(([k]) => data[k] !== undefined && data[k] !== '').map(([k, label]) => [label, String(data[k])]),
+      status: data.status ? String(data.status) : '',
       body,
       readingTime: readingTime(body),
-      url: `/posts/${slug}/`,
+      url: `/${section.key}/${slug}/`,
     };
   });
 
@@ -121,9 +144,8 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   const homeHtml = readRaw('content/home.md');
   const pinnedHtml = readRaw('content/pinned.md');
 
-  const tagCounts = new Map();
-  for (const p of posts) for (const t of p.tags) tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
-  const allTags = [...tagCounts.keys()].sort();
+  const postsBySection = new Map(sections.map((x) => [x.key, posts.filter((p) => p.section === x)]));
+  const entryTags = (p) => [p.section.key, ...p.tags];
 
   // ---- output helpers ------------------------------------------------------
   fs.rmSync(out, { recursive: true, force: true });
@@ -136,7 +158,8 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
 
   if (fs.existsSync(at('public'))) fs.cpSync(at('public'), out, { recursive: true });
 
-  const css = fs.readFileSync(at('theme/style.css'));
+  const design = createDesign(config.design);
+  const css = `${design.css}${fs.readFileSync(at('design/base.css'), 'utf8')}\n${fs.readFileSync(at('theme/style.css'), 'utf8')}`;
   const js = fs.readFileSync(at('theme/site.js'));
   const version = crypto.createHash('sha1').update(css).update(js).digest('hex').slice(0, 8);
   write('assets/style.css', css);
@@ -145,48 +168,31 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   const layout = fs.readFileSync(at('theme/layout.html'), 'utf8');
 
   const navItems = [
-    { label: 'Home', url: '/' },
-    { label: 'Archive', url: '/archive.html' },
+    ...sections.map((x) => ({ label: x.short, url: `/${x.key}/` })),
     ...pages.filter((p) => p.menu).sort((a, b) => a.order - b.order || a.title.localeCompare(b.title)).map((p) => ({ label: p.title, url: p.url })),
     ...(Array.isArray(config.nav) ? config.nav : []),
   ];
 
-  const dockHtml = config.dock && Array.isArray(config.dock.links) && config.dock.links.length
-    ? `  <div class="service-dock">
-    <div class="dock-content">
-      ${config.dock.label ? `<span class="dock-label">${esc(config.dock.label)}</span>` : ''}
-      ${config.dock.links.map((l) => `<a href="${esc(l.url)}" class="dock-item"${l.title ? ` title="${esc(l.title)}"` : ''}>${esc(l.label)}</a>`).join('\n      ')}
-    </div>
-  </div>`
-    : '';
-
-  const tagChips = (tags) =>
-    tags.length ? `<div class="post-tags">${tags.map((t) => `<a class="tag-chip" href="/archive.html?tag=${encodeURIComponent(t)}">#${esc(t)}</a>`).join('')}</div>` : '';
+  const chips = (p) => [
+    `<span class="chip chip-accent">${esc(p.section.singular)}</span>`,
+    ...(p.status ? [`<span class="chip chip-ok">${esc(p.status)}</span>`] : []),
+    ...p.tags.map((t) => `<span class="chip">${esc(t)}</span>`),
+  ].join('');
 
   const statusBadge = (p) =>
-    p.draft ? ' <span class="badge badge-draft">draft</span>' : p.scheduled ? ' <span class="badge badge-draft">scheduled</span>' : '';
+    p.draft ? ' <span class="chip">draft</span>' : p.scheduled ? ' <span class="chip">scheduled</span>' : '';
 
-  const postMeta = (p) =>
-    `<div class="post-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time> · ` : ''}${p.readingTime} min read${statusBadge(p)}</div>`;
+  const entryMeta = (p) =>
+    `<div class="entry-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time> · ` : ''}${p.readingTime} min read${statusBadge(p)}</div>`;
 
-  const sidebar = (title, items) => `    <button class="post-nav-toggle" id="postNavToggle" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="postNav">📑</button>
-    <aside class="post-nav" id="postNav">
-      <div class="post-nav-header"><span class="post-nav-title">${title}</span></div>
-      <nav class="post-nav-list" id="postNavList">
-        ${items.join('\n        ')}
-      </nav>
-    </aside>`;
-
-  const postsSidebar = (current) =>
-    sidebar('📑 Posts', posts.map((p) => `<a href="${p.url}" class="post-nav-item${p === current ? ' active' : ''}" data-target="card-${p.slug}"${p === current ? ' aria-current="page"' : ''}>${esc(p.title)}</a>`));
-
-  function renderPage(rel, { title, description = config.description, content, sidebarHtml = '', bodyClass = '', promptSuffix = '', urlPath, meta = [], root }) {
+  function renderPage(rel, { title, description = config.description, content, bodyClass = '', urlPath, meta = [], root }) {
     const depth = rel.split('/').length - 1;
     const pageRoot = root ?? (depth ? '../'.repeat(depth) : './');
+    const isActive = (n) => urlPath && (n.url === urlPath || (n.url.endsWith('/') && urlPath.startsWith(n.url)));
     const menu = navItems
-      .map((n) => `          <li><a href="${esc(n.url)}"${n.url === urlPath ? ' class="active" aria-current="page"' : ''}>${esc(n.label)}</a></li>`)
+      .map((n) => `          <li><a href="${esc(n.url)}"${isActive(n) ? ' class="active" aria-current="page"' : ''}>${esc(n.label)}</a></li>`)
       .join('\n');
-    const footerLinks = navItems.map((n) => `<a href="${esc(n.url)}">${esc(n.label)}</a>`).join(' | ');
+    const footerLinks = [{ label: 'Library', url: '/archive.html' }, ...navItems].map((n) => `<a href="${esc(n.url)}">${esc(n.label)}</a>`).join('');
     const metaTags = [
       ['og:site_name', config.title],
       ['og:title', title || config.title],
@@ -203,14 +209,14 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       siteTitle: esc(config.title),
       description: esc(description),
       meta: metaTags.join('\n'),
+      fontsUrl: esc(design.fontsUrl),
+      themeColor: esc(design.themeColor.dark),
+      themeColorLight: esc(design.themeColor.light),
       version,
       bodyClass,
-      promptCommand: esc(config.prompt.command),
-      promptPath: esc(config.prompt.path + promptSuffix),
+      brandIcon: esc(config.brandIcon || '🌿'),
       menu,
-      sidebar: sidebarHtml,
       content,
-      dock: dockHtml,
       footerLinks,
       footer: String(config.footer || '').replace(/\{year\}/g, year),
     };
@@ -218,123 +224,162 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     write(rel, rewriteRootUrls(html, pageRoot));
   }
 
-  // ---- home ----------------------------------------------------------------
-  const card = (p) => `<article class="post-card" id="card-${p.slug}" data-tags="${esc(p.tags.join(' '))}">
-  ${postMeta(p)}
-  <h3 class="post-card-title"><a href="${p.url}">${esc(p.title)}</a></h3>
-  <p class="post-card-excerpt">${esc(p.description)}</p>
-  ${tagChips(p.tags)}
-</article>`;
+  // ---- cards -----------------------------------------------------------------
+  const card = (p) => `<a class="card entry-card" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}">
+  <div class="chips">${chips(p)}</div>
+  <h3>${esc(p.title)}</h3>
+  <p>${esc(p.description)}</p>
+  ${entryMeta(p)}
+</a>`;
 
+  // ---- home ----------------------------------------------------------------
   const homePosts = config.homePosts > 0 ? posts.slice(0, config.homePosts) : posts;
+  const hero = config.hero;
   renderPage('index.html', {
     urlPath: '/',
     bodyClass: 'page-home',
-    sidebarHtml: posts.length ? postsSidebar() : '',
-    content: `${homeHtml ? `<section class="intro">\n${homeHtml}</section>` : ''}
-${pinnedHtml ? `<div class="pinned-post">\n${pinnedHtml}</div>` : ''}
-<section class="latest" aria-labelledby="latest-title">
-  <div class="section-head">
-    <h2 id="latest-title">Latest posts</h2>
-    <a href="/archive.html" class="section-link">All ${posts.length} posts →</a>
-  </div>
-  <div class="post-list">
-${homePosts.map(card).join('\n') || '<p class="empty">No posts yet.</p>'}
+    content: `<section class="hero">
+  <div class="container">
+    ${hero.eyebrow ? `<p class="eyebrow">${esc(hero.eyebrow)}</p>` : ''}
+    <h1>${esc(hero.title || config.title)}</h1>
+    ${hero.text ? `<p class="hero-text">${esc(hero.text)}</p>` : ''}
+    <div class="hero-cta">
+      ${(hero.cta || []).map((b, i) => `<a class="btn${i ? ' btn-ghost' : ''}" href="${esc(b.url)}">${esc(b.label)}</a>`).join('\n      ')}
+    </div>
   </div>
 </section>
-<script type="application/json" id="legacySlugs">${JSON.stringify(posts.map((p) => p.slug))}</script>`,
+${pinnedHtml ? `<div class="container"><aside class="pinned">\n${pinnedHtml}</aside></div>` : ''}
+<section class="block container" aria-labelledby="sections-title">
+  <p class="eyebrow">Explore</p>
+  <h2 id="sections-title">The breeding program</h2>
+  <div class="tile-grid">
+${sections.map((x) => `    <a class="card tile" href="/${x.key}/">
+      <span class="tile-icon" aria-hidden="true">${esc(x.icon)}</span>
+      <h3>${esc(x.label)}</h3>
+      <p>${esc(x.blurb)}</p>
+      <span class="tile-count">${postsBySection.get(x.key).length} ${postsBySection.get(x.key).length === 1 ? 'entry' : 'entries'} →</span>
+    </a>`).join('\n')}
+  </div>
+</section>
+<section class="block container" aria-labelledby="latest-title">
+  <div class="section-head">
+    <div><p class="eyebrow">Fresh from the garden</p><h2 id="latest-title">Latest updates</h2></div>
+    <a href="/archive.html" class="btn btn-ghost">Browse the library →</a>
+  </div>
+  <div class="card-grid">
+${homePosts.map(card).join('\n') || '<p class="empty">Nothing here yet.</p>'}
+  </div>
+</section>
+${homeHtml ? `<section class="block container about"><div class="prose">\n${homeHtml}</div></section>` : ''}`,
   });
 
-  // ---- posts ---------------------------------------------------------------
-  posts.forEach((p, i) => {
-    const newer = posts[i - 1];
-    const older = posts[i + 1];
-    const toc = p.toc.length >= 2
-      ? sidebar('📑 Contents', p.toc.map((h) => `<a href="#${h.id}" class="post-nav-item toc-depth-${h.depth}" data-target="${h.id}">${esc(h.text)}</a>`))
-      : postsSidebar(p);
-    renderPage(`posts/${p.slug}/index.html`, {
+  // ---- sections ------------------------------------------------------------
+  for (const x of sections) {
+    const list = postsBySection.get(x.key);
+    renderPage(`${x.key}/index.html`, {
+      title: x.label,
+      description: x.blurb || config.description,
+      urlPath: `/${x.key}/`,
+      bodyClass: 'page-section',
+      content: `<header class="page-hero">
+  <div class="container">
+    <p class="eyebrow">${esc(x.icon)} ${esc(config.title)}</p>
+    <h1>${esc(x.label)}</h1>
+    ${x.blurb ? `<p class="hero-text">${esc(x.blurb)}</p>` : ''}
+  </div>
+</header>
+<div class="container block">
+  <div class="card-grid">
+${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())} yet. Check back soon.</p>`}
+  </div>
+</div>`,
+    });
+  }
+
+  // ---- entries ---------------------------------------------------------------
+  posts.forEach((p) => {
+    const siblings = postsBySection.get(p.section.key);
+    const i = siblings.indexOf(p);
+    const newer = siblings[i - 1];
+    const older = siblings[i + 1];
+    const toc = p.toc.length >= 3
+      ? `<details class="toc card"><summary>On this page</summary><nav>${p.toc.map((h) => `<a href="#${h.id}" class="toc-depth-${h.depth}">${esc(h.text)}</a>`).join('')}</nav></details>`
+      : '';
+    renderPage(`${p.section.key}/${p.slug}/index.html`, {
       title: p.title,
       description: p.description,
       urlPath: p.url,
-      bodyClass: 'page-post',
-      promptSuffix: `/posts/${p.slug}`,
-      sidebarHtml: toc,
+      bodyClass: 'page-entry',
       meta: [
         ['og:type', 'article'],
         ...(p.date ? [['article:published_time', p.date]] : []),
         ...p.tags.map((t) => ['article:tag', t]),
       ],
-      content: `<article class="post" data-tags="${esc(p.tags.join(' '))}">
-  <header class="post-header">
-    <h1 class="post-title">${esc(p.title)}</h1>
-    ${postMeta(p)}
-    ${tagChips(p.tags)}
-  </header>
-  <div class="post-body">
-${p.html}
+      content: `<header class="page-hero">
+  <div class="container">
+    <p class="eyebrow"><a href="/${p.section.key}/">${esc(p.section.icon)} ${esc(p.section.label)}</a></p>
+    <h1>${esc(p.title)}</h1>
+    ${entryMeta(p)}
+    <div class="chips">${chips(p)}</div>
   </div>
-</article>
-<nav class="post-pager" aria-label="More posts">
-  ${older ? `<a class="pager-prev" href="${older.url}"><span>← Older</span><strong>${esc(older.title)}</strong></a>` : '<span></span>'}
-  ${newer ? `<a class="pager-next" href="${newer.url}"><span>Newer →</span><strong>${esc(newer.title)}</strong></a>` : '<span></span>'}
-</nav>`,
+</header>
+<div class="container block entry-layout">
+  <article class="entry">
+${p.facts.length ? `    <dl class="facts">\n${p.facts.map(([k, v]) => `      <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n    </dl>` : ''}
+    ${toc}
+    <div class="prose entry-body">
+${p.html}
+    </div>
+  </article>
+  <nav class="pager" aria-label="More in ${esc(p.section.label)}">
+    ${older ? `<a class="card" href="${older.url}"><span>← Older</span><strong>${esc(older.title)}</strong></a>` : '<span></span>'}
+    ${newer ? `<a class="card" href="${newer.url}"><span>Newer →</span><strong>${esc(newer.title)}</strong></a>` : '<span></span>'}
+  </nav>
+</div>`,
     });
   });
 
-  // ---- archive -------------------------------------------------------------
+  // ---- library (all entries, filter + search) ----------------------------------
   const years = new Map();
   for (const p of posts) {
     const y = p.date ? p.date.slice(0, 4) : 'Undated';
     if (!years.has(y)) years.set(y, []);
     years.get(y).push(p);
   }
-  const plural = (n) => (n === 1 ? '1 post' : `${n} posts`);
+  const plural = (n) => (n === 1 ? '1 entry' : `${n} entries`);
   renderPage('archive.html', {
-    title: 'Archive',
-    description: `All posts on ${config.title}, by year and tag.`,
+    title: 'Library',
+    description: `Every challenge, tutorial, report, plan and plant on ${config.title}.`,
     urlPath: '/archive.html',
     bodyClass: 'page-archive',
-    promptSuffix: '/archive',
-    content: `<div class="archive-header">
-  <h1>📁 Blog Archive</h1>
-  <p class="archive-description">All ${plural(posts.length)}, organized by year. Filter by tag or search the full text.</p>
-  <div class="search-box">
-    <input type="search" id="archiveSearch" placeholder="Search posts…" aria-label="Search posts" autocomplete="off">
+    content: `<header class="page-hero">
+  <div class="container">
+    <p class="eyebrow">📚 Library</p>
+    <h1>Everything in one place</h1>
+    <p class="hero-text">${plural(posts.length)}. Filter by section or search the full text.</p>
+    <div class="search-box"><input type="search" id="archiveSearch" placeholder="Search strains, crosses, tutorials…" aria-label="Search" autocomplete="off"></div>
   </div>
-</div>
-<div class="tag-filter">
-  <div class="tag-filter-header"><span class="tag-filter-title">🏷️ Filter by Tag</span></div>
+</header>
+<div class="container block">
   <div class="tag-filter-buttons">
     <button class="tag-btn active" data-tag="all" aria-pressed="true">All</button>
-    ${allTags.map((t) => `<button class="tag-btn" data-tag="${esc(t)}" aria-pressed="false">${esc(t)} <span class="tag-count">${tagCounts.get(t)}</span></button>`).join('\n    ')}
+    ${sections.map((x) => `<button class="tag-btn" data-tag="${esc(x.key)}" aria-pressed="false">${esc(x.icon)} ${esc(x.short)} <span class="tag-count">${postsBySection.get(x.key).length}</span></button>`).join('\n    ')}
   </div>
-</div>
-<div class="archive-content">
+  <div class="archive-content">
 ${[...years].map(([y, list]) => `<div class="archive-year">
-  <div class="year-header">
-    <h2 class="year-title">${y}</h2>
-    <span class="post-count">${plural(list.length)}</span>
-  </div>
-  <div class="posts-grid">
-${list.map((p) => `    <a href="${p.url}" class="archive-post-link" data-slug="${p.slug}" data-tags="${esc(p.tags.join(' '))}">
-      <article class="archive-post">
-        <div class="post-meta">
-          <span class="post-date">${p.date ? formatDate(p.date, dayFmt) : ''}</span>${statusBadge(p)}
-          ${p.tags.length ? `<span class="post-tags">${p.tags.map((t) => `<span class="archive-tag">${esc(t)}</span>`).join('')}</span>` : ''}
-        </div>
-        <h3 class="post-title">${esc(p.title)}</h3>
-        <p class="post-preview">${esc(p.description)}</p>
-      </article>
-    </a>`).join('\n')}
+  <div class="year-header"><h2 class="year-title">${y}</h2><span class="post-count">${plural(list.length)}</span></div>
+  <div class="card-grid">
+${list.map((p) => card(p).replace('class="card entry-card"', `class="card entry-card archive-post-link" data-slug="${p.section.key}/${p.slug}"`)).join('\n')}
   </div>
 </div>`).join('\n')}
-<p class="empty archive-empty" hidden>No posts match your filter.</p>
+<p class="empty archive-empty" hidden>Nothing matches your filter.</p>
+  </div>
 </div>`,
   });
 
   write('search.json', JSON.stringify(posts.map((p) => ({
-    s: p.slug,
-    t: `${p.title} ${p.tags.join(' ')} ${p.description} ${markdownToText(p.body)}`.toLowerCase().replace(/\s+/g, ' '),
+    s: `${p.section.key}/${p.slug}`,
+    t: `${p.title} ${p.section.label} ${p.tags.join(' ')} ${p.facts.map(([, v]) => v).join(' ')} ${p.description} ${markdownToText(p.body)}`.toLowerCase().replace(/\s+/g, ' '),
   }))));
 
   // ---- pages ---------------------------------------------------------------
@@ -344,8 +389,7 @@ ${list.map((p) => `    <a href="${p.url}" class="archive-post-link" data-slug="$
       description: p.description,
       urlPath: p.url,
       bodyClass: `page-${p.slug}`,
-      promptSuffix: `/${p.slug}`,
-      content: `<article class="page">\n${p.html}</article>`,
+      content: `<div class="container block"><article class="prose page">\n${p.html}</article></div>`,
     });
   }
 
@@ -354,12 +398,10 @@ ${list.map((p) => `    <a href="${p.url}" class="archive-post-link" data-slug="$
     title: 'Not found',
     root: basePath,
     bodyClass: 'page-404',
-    promptSuffix: '/404',
-    content: `<div class="not-found">
-  <pre class="terminal"><code>$ cd <span id="missingPath">this-page</span>
-bash: cd: no such file or directory</code></pre>
-  <h1>404 · Page not found</h1>
-  <p>The page you are looking for doesn't exist (anymore). Try the <a href="/">home page</a> or the <a href="/archive.html">archive</a>.</p>
+    content: `<div class="container block not-found">
+  <p class="eyebrow">404</p>
+  <h1>This plant didn't make it</h1>
+  <p>We couldn't find <code id="missingPath">that page</code>. Head back to the <a href="/">home page</a> or browse the <a href="/archive.html">library</a>.</p>
 </div>`,
   });
 
@@ -392,6 +434,7 @@ ${p.tags.map((t) => `    <category>${xml(t)}</category>`).join('\n')}
     const urls = [
       { loc: '/', lastmod: posts[0]?.date },
       { loc: '/archive.html', lastmod: posts[0]?.date },
+      ...sections.map((x) => ({ loc: `/${x.key}/` })),
       ...pages.map((p) => ({ loc: p.url })),
       ...posts.filter((p) => !p.draft && !p.scheduled).map((p) => ({ loc: p.url, lastmod: p.date })),
     ];
@@ -412,6 +455,8 @@ ${urls.map((u) => `  <url><loc>${xml(absUrl(u.loc))}</loc>${u.lastmod ? `<lastmo
   write('admin/config.json', JSON.stringify({
     siteTitle: config.title,
     siteUrl,
+    fontsUrl: design.fontsUrl,
+    sections: sections.map(({ key, label, icon }) => ({ key, label, icon })),
     owner: config.repo.owner,
     repo: config.repo.name,
     branch: config.repo.branch || 'main',

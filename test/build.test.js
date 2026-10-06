@@ -23,7 +23,7 @@ test('builds the expected files', () => {
     'admin/lib/content.js', 'admin/lib/markdown.js', 'admin/vendor/marked.esm.js']) {
     assert.ok(fs.existsSync(path.join(out, f)), `missing ${f}`);
   }
-  for (const p of result.posts) assert.ok(fs.existsSync(path.join(out, 'posts', p.slug, 'index.html')), `missing post ${p.slug}`);
+  for (const p of result.posts) assert.ok(fs.existsSync(path.join(out, p.section.key, p.slug, 'index.html')), `missing post ${p.slug}`);
   for (const p of result.pages) assert.ok(fs.existsSync(path.join(out, `${p.slug}.html`)), `missing page ${p.slug}`);
 });
 

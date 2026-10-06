@@ -1,193 +1,70 @@
-# 🖥️ derlocke.net Blog
+# 🌿 Apex Genetics
 
-A personal blog built on **Kiwi Blog 2**, a small, fast static blog generator with a
-browser-based admin panel. It's made for free hosting on GitHub Pages.
+A personal cannabis breeding website: breeding **challenges**, **tutorials**, **grow reports**,
+**breeding reports**, **plans**, the **seed stash**, **mother plants** and **cuts**.
+Forked from [derlocke-blog](https://github.com/derlocke-ng/derlocke-blog) (the Kiwi Blog static
+generator and browser admin) and redesigned as a website rather than a blog. Static HTML, no
+framework, hosted on GitHub Pages.
 
-**Live:** [derlocke.net](https://derlocke.net) · **Admin:** [derlocke.net/admin/](https://derlocke.net/admin/)
+> The design follows a dark forest-green / cream / gold palette with Fraunces, Inter and JetBrains Mono.
+> It is an interpretation, not a copy, of the look of doctorschoice.farm (that site could not be
+> fetched while building this). Tweak it in `site.json` under `design`.
 
-## ✨ Features
+## Content
 
-**For readers**
-- ⚡ **Fast:** plain static HTML, one CSS file (~7 KB gzipped) and ~3 KB (gzipped) of vanilla JS. No framework, no tracking.
-- 📄 **One page per post** with clean URLs (`/posts/my-post/`), table of contents, reading time and older/newer links
-- 🔍 **Archive with full-text search** and tag filtering (shareable: `archive.html?tag=linux&q=wireguard`)
-- 🎨 **Syntax highlighting** (at build time), copy buttons on code blocks, heading anchors
-- 🌙 **Dark mode by default**, light mode toggle (no flash on load)
-- 📡 **RSS feed**, sitemap, Open Graph tags, canonical URLs, terminal-style 404 page
-- 📱 Responsive and accessible (skip link, keyboard focus, reduced-motion support)
+Everything lives in `content/posts/*.md` (edit it in the admin at `/admin/` or by hand). The front matter
+`type:` picks the section:
 
-**For you (the author)**
-- 🔐 **Admin panel at `/admin/`**, unlocked with a single password: write, edit, rename and delete posts and pages, then publish with one click
-- 👀 **Live preview** that looks exactly like the site, with a split view on desktop and tabs on mobile
-- 🖼️ **Image upload**: paste, drop or pick images. They're resized and converted to WebP automatically.
-- 💾 **Drafts & scheduled posts**: `draft: true`, or a future date that goes live on the daily rebuild
-- 🛟 **Safe editing**: unsaved work is kept locally, you're warned before overwriting changes made elsewhere, and every save is a git commit with full history
-- 🚦 **Deploy status** shows when your change is live
-- 🧪 Tests run before every deploy, so a broken build never goes live
-
-## 🧠 How it works
-
-```
- you ──▶ /admin/ ──(GitHub API, your token)──▶ commit to main
-                                                    │
-                       GitHub Actions: npm test + npm run build
-                                                    │
-                                   GitHub Pages ◀── dist/
-```
-
-GitHub Pages only serves static files, so the admin panel talks **directly to the GitHub API
-from your browser**. Saving a post creates a commit. That triggers the existing deploy workflow,
-which rebuilds the site in about a minute. There's no server, no database and nothing to pay for.
-
-Anyone can open `/admin/`, but it's useless without the admin password, which unlocks an encrypted
-GitHub token, or a GitHub token with write access to this repository.
-
-## 🔐 Setting up the admin
-
-1. **Pages must deploy from Actions:** in the repo, go to *Settings → Pages → Build and deployment → Source* and pick **GitHub Actions**.
-2. **Create a token:** go to [GitHub → Settings → Developer settings → Fine-grained tokens](https://github.com/settings/personal-access-tokens/new).
-   - *Repository access:* **Only select repositories** → `derlocke-ng/derlocke-blog`
-   - *Permissions:* **Contents → Read and write** (required) and **Actions → Read** (optional, for the deploy status)
-   - Pick an expiry date you're comfortable with. You can create a new token any time.
-3. **Set an admin password**, using either method:
-   - **In the browser:** open `https://derlocke.net/admin/`, choose *Sign in with a GitHub token*, paste the token, then go to **Settings → Admin password** and save a password.
-   - **On your computer:** run `npm run vault`, paste the token, choose a password, then commit and push `admin/vault.json`.
-
-From then on, `/admin/` only asks for the **password**, on any device.
-
-### How the password unlock works
-
-Your token is encrypted **in your browser** (or by `npm run vault`) with AES-256-GCM. The key is
-derived from your password with 1,000,000 rounds of PBKDF2-SHA256. Only the encrypted result is
-committed to the repo as `admin/vault.json`, and the plain token is never stored there. Entering
-the password decrypts the token locally, and it is only ever sent to `api.github.com`.
-
-⚠️ **The encrypted file is public**, so anyone can download it and try to guess the password
-offline, where no rate limit applies. The password is the *only* protection:
-
-- Use a **long, unique** password. The *Generate* button makes a random ~140-bit one; keep it in a password manager.
-  Short or reused passwords are rejected, but "strong enough for the checker" is not the same as strong.
-- Keep the token **scoped to this one repository** with only the permissions above, and give it an **expiry**.
-  Then even a leaked token can only touch this blog, and only until it expires. Revoke it on GitHub if in doubt.
-- If you forget the password, sign in with a token and save a new password. When the token expires,
-  sign in with a new token and save the password again; this re-encrypts the new token.
-
-Unless you tick *Stay signed in*, the unlocked token only lives in that browser tab. Sign out from **Settings**.
-
-> Because the admin runs on the same origin as the blog, don't add untrusted third-party
-> `<script>`s to the theme.
-
-## 🚀 Local development
-
-Requires **Node.js 20+**. You only need it to preview locally; the live site builds on GitHub.
-
-```bash
-npm install
-npm run dev      # http://localhost:8000, rebuilds and reloads on every change, shows drafts
-npm run build    # production build into dist/
-npm test         # unit tests + build + broken-link check
-npm run vault    # encrypt your GitHub token with an admin password -> admin/vault.json
-```
-
-## ✍️ Writing posts
-
-Use the admin, or add a Markdown file to `content/posts/`. The file name is the URL slug:
-
-```markdown
----
-title: Self-Hosting a WireGuard VPN
-date: 2025-09-15
-tags: [networking, homelab, tutorial]
-description: Optional summary for the home page, search engines and RSS.
-draft: false
----
-
-Your post in **Markdown**: lists, tables, `code`, fenced code blocks with syntax
-highlighting, images, blockquotes…
-
-<!--more-->
-
-Everything above `<!--more-->` (optional) becomes the excerpt.
-```
-
-| Field | Meaning |
+| `type` | Section |
 |---|---|
-| `title` | Post title (required) |
-| `date` | `YYYY-MM-DD`. A future date means the post is *scheduled*: it's published by the daily rebuild on that day. |
-| `tags` | List of tags, shown as chips and filters in the archive |
-| `description` | Optional summary. Defaults to the first paragraph. |
-| `draft` | `true` keeps the post off the live site. It's still visible in `npm run dev`. |
+| `challenges` | Breeding challenges |
+| `tutorials` | Tutorials |
+| `grow-reports` | Grow reports |
+| `breeding-reports` | Breeding reports |
+| `plans` | Plans |
+| `seed-stash` | Seed stash |
+| `mothers` | Mother plants |
+| `cuts` | Cuts |
 
-Old Kiwi Blog posts (`# Title` / `**Date:**` / `**Tags:**` header) still work.
+Optional spec-sheet fields shown on an entry: `strain`, `cross`, `generation`, `status`, `stage`, `sex`,
+`quantity`, `source`, `phenotype`, `flowering`, `yield`. Sections themselves (labels, icons, blurbs) are
+configured in `site.json`. Entries appear at `/<section>/<slug>/`.
 
-**Links and images:** write site-absolute paths like `/posts/other-post/`, `/archive.html` or
-`/media/2026/photo.webp`. They're rewritten so they work however the site is hosted.
-`## Heading {#custom-id}` sets an explicit anchor id.
+Other files: `content/home.md` (about block), `content/pinned.md` (highlight on the home page),
+`content/pages/*.md` (extra pages such as About).
 
-## 📄 Pages, home & settings
-
-| What | Where |
-|---|---|
-| Static pages (`/projects.html`, …) | `content/pages/*.md`. Front matter: `title`, `menu: true`, `order: 1`, `description`, `draft` |
-| Home page intro | `content/home.md` |
-| Pinned notice on the home page | `content/pinned.md` (empty = hidden) |
-| Images & files | `public/media/` → served at `/media/…` |
-| Anything served as-is (`CNAME`, `bg.jpg`, favicons…) | `public/` |
-| Site title, URL, prompt, project dock, footer, extra menu links | `site.json` |
-
-All of these can be edited from the admin. `site.json` looks like this:
-
-```jsonc
-{
-  "title": "derlocke.net",
-  "description": "…",
-  "url": "https://derlocke.net",          // used for RSS, sitemap & canonical links
-  "language": "en",
-  "prompt": { "command": "cd", "path": "/var/home/derlocke" },
-  "homePosts": 10,                          // posts listed on the home page (0 = all)
-  "nav": [],                                // extra menu links: { "label": "…", "url": "…" }
-  "dock": { "label": "Projects:", "links": [{ "label": "🥝 Kiwi", "url": "/projects.html#kiwi-network" }] },
-  "footer": "© {year} derlocke.net · …",   // HTML allowed
-  "repo": { "owner": "derlocke-ng", "name": "derlocke-blog", "branch": "main" }
-}
-```
-
-## 📁 Structure
+## Commands
 
 ```
-├── content/
-│   ├── posts/*.md        blog posts
-│   ├── pages/*.md        static pages
-│   ├── home.md           home page intro
-│   └── pinned.md         pinned notice
-├── public/               copied to the site root (CNAME, bg.jpg, media/)
-├── theme/
-│   ├── layout.html       page shell (header, menu, dock, footer)
-│   ├── style.css         all styling
-│   └── site.js           front-end behaviour
-├── admin/                the admin panel (vanilla JS, no build step)
-├── lib/                  markdown, front matter & vault code shared by build and admin
-├── scripts/vault.js      creates admin/vault.json (npm run vault)
-├── build.js              the generator (~400 lines)
-├── dev.js                local preview server
-├── test/                 node:test suites (run in CI before deploying)
-└── site.json             site configuration
+npm ci
+npm run dev      # local preview with live rebuild
+npm run build    # build to dist/
+npm test
+npm run vault    # set up the admin password (see below)
 ```
 
-Runtime dependencies: none. Build dependencies: [`marked`](https://marked.js.org) and
-[`highlight.js`](https://highlightjs.org).
+## Shared design template
 
-## 🎨 Customization
+The look is a reusable template, so [derlocke-blog](https://github.com/derlocke-ng/derlocke-blog) can use it too:
 
-- **Look & feel:** `theme/style.css`. Colours are CSS variables at the top.
-- **Markup:** `theme/layout.html` holds the page shell. Post, archive and card markup live in `build.js`.
-- **Background:** replace `public/bg.jpg`.
-- **Custom domain:** `public/CNAME`, plus *Settings → Pages → Custom domain*.
+- `lib/design.js`: `createDesign({ preset, tokens, light, fonts })` returns the CSS variables for dark and
+  light mode, the Google Fonts URL and the `theme-color` values. Presets: `apex` and `terminal`.
+- `design/base.css`: neutral components (header, footer, buttons, cards, chips, prose, code) that only use those variables.
 
-## 📜 License
+To reuse it, copy those two files into the other project, prepend `createDesign(...).css` to `base.css`
+in its build step (see `build.js`), put `design.fontsUrl` into the layout, and add site-specific CSS
+afterwards (`theme/style.css` here). Override colors or fonts per site via `site.json`:
 
-MIT License. Based on [Kiwi Blog](https://github.com/derlocke-ng/kiwi-blog).
+```json
+"design": { "preset": "terminal", "tokens": { "accent": "#6c9fd1" }, "fonts": { "display": { "family": "Lora", "weights": "600" } } }
+```
 
----
+## Admin
 
-Made with 🖥️ and too much coffee.
+`/admin/` lets you write and publish entries from the browser (every save is a git commit). Run
+`npm run vault` to encrypt a fine-grained GitHub token for this repository behind a password; it writes
+`admin/vault.json`.
+
+## License
+
+MIT

@@ -1,4 +1,4 @@
-// derlocke.net front-end: theme, menu, sidebar, archive filtering, small niceties.
+// Apex Genetics front-end: theme, menu, library filtering, small niceties.
 // No dependencies; everything degrades gracefully without JavaScript.
 
 (() => {
@@ -11,110 +11,46 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
   };
 
-  // ---- Legacy links: index.html#post-slug -> posts/post-slug/ ---------------
-  function redirectLegacyHash() {
-    const slugs = $('#legacySlugs');
-    const hash = decodeURIComponent(location.hash.slice(1));
-    if (!slugs || !hash || document.getElementById(hash)) return;
-    try {
-      if (JSON.parse(slugs.textContent).includes(hash)) location.replace(`posts/${hash}/`);
-    } catch { /* ignore */ }
-  }
-
   // ---- Dark / light mode ----------------------------------------------------
   function initTheme() {
-    const btn = $('#darkModeToggle');
+    const btn = $('#themeToggle');
     const meta = $('meta[name="theme-color"]');
-    const apply = (dark) => {
-      document.documentElement.classList.toggle('light', !dark);
-      if (meta) meta.setAttribute('content', dark ? '#1a1a1a' : '#f5f5f5');
-      if (btn) {
-        btn.textContent = dark ? '☀️' : '🌙';
-        btn.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
-      }
+    const apply = (light) => {
+      document.documentElement.classList.toggle('light', light);
+      if (meta) meta.setAttribute('content', light ? meta.dataset.light : meta.dataset.dark);
+      if (btn) btn.textContent = light ? '🌙' : '☀️';
     };
-    apply(store.get('derlocke-darkMode') !== 'false');
+    apply(store.get('apex-light') === 'true');
     btn?.addEventListener('click', () => {
-      const dark = document.documentElement.classList.contains('light');
-      apply(dark);
-      store.set('derlocke-darkMode', String(dark));
+      const light = !document.documentElement.classList.contains('light');
+      apply(light);
+      store.set('apex-light', String(light));
     });
   }
 
-  // ---- Dropdown menu --------------------------------------------------------
+  // ---- Mobile menu ----------------------------------------------------------
   function initMenu() {
     const toggle = $('.menu-toggle');
-    const dropdown = $('.menu-dropdown');
-    if (!toggle || !dropdown) return;
+    const nav = $('#mainNav');
+    if (!toggle || !nav) return;
     const set = (open) => {
-      dropdown.classList.toggle('active', open);
+      nav.classList.toggle('active', open);
       toggle.textContent = open ? '✕' : '☰';
       toggle.setAttribute('aria-expanded', String(open));
     };
     toggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      set(!dropdown.classList.contains('active'));
+      set(!nav.classList.contains('active'));
     });
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.menu-container')) set(false);
+      if (!e.target.closest('.site-header')) set(false);
     });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') set(false);
     });
   }
 
-  // ---- Sidebar: mobile toggle + scroll spy ------------------------------------
-  function initSidebar() {
-    const nav = $('#postNav');
-    const list = $('#postNavList');
-    const toggle = $('#postNavToggle');
-    if (!nav || !list) return;
-
-    const mobile = () => window.matchMedia('(max-width: 1200px)').matches;
-    const setOpen = (open) => {
-      nav.classList.toggle('open', open);
-      if (toggle) {
-        toggle.textContent = open ? '✕' : '📑';
-        toggle.setAttribute('aria-expanded', String(open));
-      }
-    };
-    toggle?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      setOpen(!nav.classList.contains('open'));
-    });
-    document.addEventListener('click', (e) => {
-      if (mobile() && !e.target.closest('.post-nav')) setOpen(false);
-    });
-
-    list.addEventListener('click', (e) => {
-      const link = e.target.closest('a[href^="#"]');
-      if (!link) return;
-      const target = document.getElementById(decodeURIComponent(link.getAttribute('href').slice(1)));
-      if (!target) return;
-      e.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      history.replaceState(null, '', link.getAttribute('href'));
-      if (mobile()) setOpen(false);
-    });
-
-    const items = $$('.post-nav-item[data-target]', list).filter((a) => document.getElementById(a.dataset.target));
-    if (!items.length || !('IntersectionObserver' in window)) return;
-    const byId = new Map(items.map((a) => [a.dataset.target, a]));
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const active = byId.get(entry.target.id);
-        if (!active) continue;
-        items.forEach((a) => a.classList.toggle('active', a === active));
-        const box = list.getBoundingClientRect();
-        const r = active.getBoundingClientRect();
-        if (r.top < box.top || r.bottom > box.bottom) active.scrollIntoView({ block: 'nearest' });
-      }
-    }, { rootMargin: '-80px 0px -60% 0px' });
-    byId.forEach((_, id) => observer.observe(document.getElementById(id)));
-  }
-
-  // ---- Archive: tag filter + full-text search --------------------------------
+  // ---- Library: section filter + full-text search ----------------------------
   function initArchive() {
     const buttons = $$('.tag-btn');
     const links = $$('.archive-post-link');
@@ -156,7 +92,7 @@
       $$('.archive-year').forEach((year) => {
         const n = $$('.archive-post-link:not(.tag-hidden)', year).length;
         const count = $('.post-count', year);
-        if (count) count.textContent = n === 1 ? '1 post' : `${n} posts`;
+        if (count) count.textContent = n === 1 ? '1 entry' : `${n} entries`;
         year.classList.toggle('tag-hidden', n === 0);
       });
       if (empty) empty.hidden = visibleTotal > 0;
@@ -181,10 +117,9 @@
     else apply();
   }
 
-  // ---- Code blocks: language label + copy button -------------------------------
+  // ---- Code blocks: copy button ----------------------------------------------
   function initCodeBlocks() {
     $$('main pre > code').forEach((code) => {
-      const pre = code.parentElement;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'copy-btn';
@@ -199,13 +134,13 @@
         }
         setTimeout(() => { btn.textContent = 'copy'; }, 1600);
       });
-      pre.appendChild(btn);
+      code.parentElement.appendChild(btn);
     });
   }
 
   // ---- Heading anchors -------------------------------------------------------
   function initHeadingAnchors() {
-    $$('.post-body :is(h2,h3,h4)[id], .page :is(h2,h3,h4)[id]').forEach((h) => {
+    $$('.prose :is(h2,h3,h4)[id]').forEach((h) => {
       const a = document.createElement('a');
       a.className = 'heading-anchor';
       a.href = `#${h.id}`;
@@ -215,31 +150,13 @@
     });
   }
 
-  // ---- Reading progress (posts only) ------------------------------------------
-  function initProgress() {
-    const bar = $('.scroll-progress');
-    if (!bar || !document.body.classList.contains('page-post')) return;
-    let ticking = false;
-    const update = () => {
-      const el = document.documentElement;
-      const max = el.scrollHeight - el.clientHeight;
-      bar.style.transform = `scaleX(${max > 0 ? Math.min(1, el.scrollTop / max) : 0})`;
-      ticking = false;
-    };
-    window.addEventListener('scroll', () => {
-      if (!ticking) { ticking = true; requestAnimationFrame(update); }
-    }, { passive: true });
-    update();
-  }
-
   function init404() {
     const el = $('#missingPath');
     if (el) el.textContent = decodeURIComponent(location.pathname);
   }
 
-  redirectLegacyHash();
   const start = () => {
-    for (const fn of [initTheme, initMenu, initSidebar, initArchive, initCodeBlocks, initHeadingAnchors, initProgress, init404]) {
+    for (const fn of [initTheme, initMenu, initArchive, initCodeBlocks, initHeadingAnchors, init404]) {
       try { fn(); } catch (err) { console.error(err); }
     }
   };
