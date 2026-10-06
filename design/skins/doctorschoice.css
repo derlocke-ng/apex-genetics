@@ -26,7 +26,8 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 .site-header{position:relative;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 .site-header .container{width:100%;max-width:none;min-height:clamp(122px,6.3542vw,162.7px);padding-inline:0 clamp(1rem,2.5vw,2.5rem);gap:clamp(.75rem,2.5vw - 12px,2.5rem)}
 .brand{align-self:stretch;gap:0;font:800 .95rem/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
-.brand-mark{align-self:stretch;width:auto;height:auto;min-width:84px;border-radius:0;background:var(--marker);box-shadow:none;font-size:2rem}
+.brand-mark{align-self:stretch;width:auto;height:auto;min-width:84px;border-radius:0;background:var(--marker);box-shadow:none;color:#fff;font-size:2rem}
+.site-header .brand-mark .logo{height:46%}
 .brand-name{padding-inline:1.25rem}
 .nav{align-self:stretch;align-items:stretch;margin-left:0}
 .header-tools{margin-left:auto}
@@ -70,6 +71,7 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 .hero-text,.page-hero .hero-text{color:var(--hd-text);font-size:1rem;font-weight:500;line-height:1.6}
 .hero-panel{border-radius:0;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
 .hero-panel-title{color:var(--hd-text);font-size:.75rem}
+.hero-panel-mark{color:var(--marker)}
 .hero-count{font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:.75rem}
 .hero-count span{font-weight:800;letter-spacing:-.03em}
 .hero-stats div{border-top-color:var(--hd-border)}
@@ -98,7 +100,7 @@ h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
 .tile-grid{gap:.75rem}
 a.tile{padding:1.25rem 1.25rem 1.5rem;border:2px solid var(--text);border-radius:0;background:transparent}
 a.card.tile:hover{transform:none;box-shadow:none;border-color:var(--text);background:var(--text);color:var(--bg)}
-.tile-icon{display:none}
+.tile .tile-icon{margin-bottom:1rem}
 .tile h3{font-size:1.25rem;letter-spacing:-.02em}
 .tile p{color:inherit;font-size:.875rem;font-weight:500;line-height:1.43}
 .tile-count{font-size:.75rem;color:var(--accent)}
@@ -109,7 +111,6 @@ a.tile:hover .tile-count{color:var(--marker)}
 a.entry-card{gap:14px;overflow:visible;border:0;border-radius:0;background:transparent}
 a.card.entry-card:hover{transform:none;box-shadow:none}
 .card-thumb{border:0;background:var(--placeholder)}
-.card-icon{filter:none}
 .card-status{left:.75rem;top:.75rem;padding:.35rem .5rem;border-radius:0;background:var(--marker);color:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
 .card-body{gap:.5rem;padding:0}
 .card-kicker{align-items:center;gap:10px;color:var(--text);font:600 .75rem/1.33 var(--font-label);letter-spacing:.08em;font-variant-numeric:tabular-nums}
@@ -122,6 +123,7 @@ a.entry-card:hover h3{color:var(--accent)}
 .entry-card .chips{margin:0}
 .view-btn{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:auto;padding:0 22px;border:2px solid var(--text);color:var(--text);font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em;text-transform:uppercase;transition:background .15s,color .15s}
 .view-btn .arrow{display:none}
+.is-article .view-btn{display:none}
 .card-body>:nth-last-child(2){margin-bottom:.75rem}
 a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
 
@@ -140,24 +142,32 @@ a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
 .product-summary{padding-top:0}
 .product-summary h1{margin:0 0 1.5rem;font-size:clamp(2.25rem,3.2vw,3rem);font-weight:800;line-height:1;letter-spacing:-.02em;text-transform:uppercase}
 .product-lede{margin:0 0 1.75rem;color:color-mix(in srgb,var(--text) 93%,var(--bg));font-size:1rem;font-weight:500;line-height:1.5}
-.product-specs,.product-tags,.product-actions{margin:0 0 1.75rem;padding-top:1.75rem;border-top:1px solid var(--surface2)}
+.product-specs,.product-traits,.product-tags{margin:0 0 1.75rem;padding-top:1.75rem;border-top:1px solid var(--surface2)}
 .spec{border:0}
 .spec div{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:.6rem 0;border:0}
-.spec dt{color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.14em}
+.spec dt{gap:1.125rem;color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.14em}
+.spec dt .icon{width:18px;height:18px}
+.product-cross .label .icon{width:14px;height:14px}
 .spec dd{font:800 .875rem/1.3 var(--font-display);text-align:right;text-transform:uppercase}
 .product-cross{margin-top:1.5rem}
-.product-cross .label,.product-tags .label{margin:0 0 .6rem;color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.14em}
-.product-tags .label{font-weight:800;letter-spacing:.12em}
+.product-cross .label,.product-tags .label,.traits .label{margin:0 0 .6rem;color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.14em}
+.product-tags .label,.traits .label{font-weight:800;letter-spacing:.12em}
+.traits .label{margin-bottom:1rem}
+.trait-list{gap:1rem 2.5rem}
+.trait{gap:.9rem;font:700 1rem/1.3 var(--font-body)}
+.trait .icon-tile{width:2.125rem;height:2.125rem}
 .product-cross-value{color:var(--text);font:700 1rem/1.4 var(--font-body)}
 .product-tags .chips{flex-direction:column;gap:0}
 .product-tags .chip{display:flex;align-items:center;gap:10px;padding:.4rem 0;color:var(--text);font:500 .875rem/1.4 var(--font-label);letter-spacing:.02em}
 .product-tags .chip::before,.product-tags .chip + .chip::before{content:"";width:6px;height:6px;margin:0;background:var(--marker);flex:none}
-.product-actions{gap:12px}
-.product-actions .btn{flex:1 1 auto;min-height:56px;padding:0 1.5rem;font-size:.875rem;letter-spacing:.1em;white-space:nowrap}
-.product-actions .btn:not(.btn-ghost){flex-basis:12rem}
 .product-meta{color:var(--text);font-size:.875rem;font-weight:500}
 .entry-details{border-top:1px solid var(--surface2)}
 .tab-title{display:none}
+.article-kicker .label{color:var(--text);font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
+.article-kicker .chip{color:var(--accent);font-weight:700}
+.article-head h1{font-size:clamp(2.25rem,4vw,3.5rem);font-weight:800;line-height:1;letter-spacing:-.02em;text-transform:uppercase}
+.article-head .product-lede{margin-bottom:1rem}
+.article-facts{border-top:0;padding-top:0}
 .toc{border:2px solid var(--text);border-radius:0}
 .toc summary{color:var(--text);font-weight:700;letter-spacing:.08em}
 .toc a{color:var(--text);font-weight:500}

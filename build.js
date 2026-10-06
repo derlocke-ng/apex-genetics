@@ -16,18 +16,24 @@ import {
 } from './lib/content.js';
 import { createMarkdown, rewriteRootUrls } from './lib/markdown.js';
 import { createDesign } from './lib/design.js';
+import { createIcons, safeColor } from './lib/icons.js';
+import { traitList, resolveTrait, TRAIT_KINDS } from './lib/traits.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const at = (...p) => path.join(ROOT, ...p);
 
 const RESERVED = new Set(['index', 'archive', '404', 'feed', 'sitemap', 'robots', 'search', 'admin', 'posts', 'assets', 'media']);
 
-// Optional front matter shown as a "spec sheet" on an entry page.
+// Optional front matter shown as a "spec sheet" on an entry page: [key, label, icon].
 const FACTS = [
-  ['strain', 'Strain'], ['cross', 'Cross'], ['generation', 'Generation'], ['status', 'Status'],
-  ['stage', 'Stage'], ['sex', 'Sex'], ['quantity', 'Quantity'], ['source', 'Source'],
-  ['phenotype', 'Phenotype'], ['flowering', 'Flowering'], ['yield', 'Yield'],
+  ['strain', 'Strain', 'leaf'], ['cross', 'Cross', 'git-merge'], ['generation', 'Generation', 'layers'],
+  ['status', 'Status', 'activity'], ['stage', 'Stage', 'hourglass'], ['sex', 'Sex', 'venus-and-mars'],
+  ['quantity', 'Quantity', 'hash'], ['source', 'Source', 'map-pin'], ['phenotype', 'Phenotype', 'fingerprint'],
+  ['flowering', 'Flowering', 'sun'], ['yield', 'Yield', 'scale'],
 ];
+
+// Section layouts: "article" (reading) or "specimen" (a plant, cut or seed lot with a spec sheet).
+const LAYOUTS = new Set(['article', 'specimen']);
 
 const DEFAULTS = {
   title: 'My Site',
@@ -37,7 +43,7 @@ const DEFAULTS = {
   author: '',
   design: { preset: 'apex' },
   hero: { eyebrow: '', title: '', text: '', cta: [] },
-  sections: [{ key: 'entries', label: 'Entries', short: 'Entries', singular: 'Entry', icon: '🌱', blurb: '' }],
+  sections: [{ key: 'entries', label: 'Entries', short: 'Entries', singular: 'Entry', icon: 'sprout', blurb: '' }],
   homePosts: 6,
   feedPosts: 20,
   nav: [],
@@ -59,10 +65,11 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   config.design = { ...DEFAULTS.design, ...config.design };
   config.hero = { ...DEFAULTS.hero, ...config.hero };
   const sections = (Array.isArray(config.sections) && config.sections.length ? config.sections : DEFAULTS.sections)
-    .map((x) => ({ short: x.label, singular: x.label, icon: '🌱', blurb: '', ...x }));
+    .map((x) => ({ short: x.label, singular: x.label, icon: 'sprout', color: '', blurb: '', layout: 'article', ...x }));
   const sectionByKey = new Map(sections.map((x) => [x.key, x]));
   for (const x of sections) {
     if (x.key !== slugify(x.key) || RESERVED.has(x.key)) throw new Error(`site.json: section key "${x.key}" must be a URL-friendly name that is not reserved`);
+    if (!LAYOUTS.has(x.layout)) throw new Error(`site.json: section "${x.key}" has layout "${x.layout}", expected ${[...LAYOUTS].join(' or ')}`);
   }
   config.repo = { ...DEFAULTS.repo, ...config.repo };
   const siteUrl = String(config.url || '').replace(/\/+$/, '');
@@ -111,7 +118,10 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       type,
       section,
       cross: data.cross ? String(data.cross) : '',
-      facts: FACTS.filter(([k]) => data[k] !== undefined && data[k] !== '').map(([k, label]) => [label, String(data[k])]),
+      facts: FACTS.filter(([k]) => data[k] !== undefined && data[k] !== '').map(([k, label, icon]) => [label, String(data[k]), icon]),
+      traits: Object.keys(TRAIT_KINDS)
+        .map((kind) => [kind, traitList(data[kind]).map((t) => resolveTrait(kind, t, (config.traits || {})[kind]))])
+        .filter(([, list]) => list.length),
       status: data.status ? String(data.status) : '',
       body,
       readingTime: readingTime(body),
@@ -175,6 +185,39 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
 
   const layout = fs.readFileSync(at('theme/layout.html'), 'utf8');
 
+  // Logo (theme/logo.svg, drawn in currentColor) and a favicon tile in the preset's brand colors.
+  // Without a logo file, site.json's brandIcon text (or the title's initial) stands in.
+  const logoSvg = fs.existsSync(at('theme/logo.svg')) ? fs.readFileSync(at('theme/logo.svg'), 'utf8') : '';
+  const logoParts = logoSvg.match(/<svg[^>]*\sviewBox="([\d.\s-]+)"[^>]*>([\s\S]*)<\/svg>/);
+  const logoInner = logoParts ? logoParts[2].replace(/<title>[\s\S]*?<\/title>/, '').trim() : '';
+  const logo = (cls = 'logo') => (logoParts
+    ? `<svg class="${cls}" viewBox="${logoParts[1]}" aria-hidden="true" focusable="false">${logoInner}</svg>`
+    : esc(config.brandIcon || String(config.title).charAt(0)));
+  const brand = {
+    bg: safeColor(design.brand.bg, '#000000'),
+    fg: safeColor(design.brand.fg, '#ffffff'),
+    radius: Math.max(0, Math.min(32, Number(design.brand.radius) || 0)),
+  };
+  const faviconSvg = logoParts
+    ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${brand.radius}" fill="${brand.bg}"/><svg x="8" y="7" width="48" height="50" viewBox="${logoParts[1]}" color="${brand.fg}">${logoInner}</svg></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${esc(config.brandIcon || String(config.title).charAt(0))}</text></svg>`;
+  write('assets/favicon.svg', faviconSvg);
+
+  // Icon tiles: a line icon on a colored square (see .icon-tile in design/base.css).
+  // A section icon that is not an icon name (e.g. an emoji) is shown as text instead.
+  const icons = createIcons(at('design/icons'));
+  const tile = (icon, color, cls = '') =>
+    `<span class="icon-tile${cls ? ` ${cls}` : ''}" style="--tile:${safeColor(color, 'var(--accent)')}" aria-hidden="true">${icons.svg(icon) ?? `<span class="icon-text">${esc(icon)}</span>`}</span>`;
+  const sectionTile = (x, cls = '') => tile(x.icon, x.color, cls);
+  for (const x of sections) {
+    if (/^[a-z0-9-]+$/.test(x.icon) && !icons.has(x.icon)) warnings.push(`site.json: section "${x.key}" uses icon "${x.icon}", which is not in design/icons`);
+  }
+  for (const p of posts) {
+    for (const [, list] of p.traits) {
+      for (const t of list) if (!icons.has(t.icon)) warnings.push(`content/posts/${p.slug}.md: icon "${t.icon}" for "${t.label}" is not in design/icons`);
+    }
+  }
+
   const navItems = [
     ...sections.map((x) => ({ label: x.short, url: `/${x.key}/` })),
     ...pages.filter((p) => p.menu).sort((a, b) => a.order - b.order || a.title.localeCompare(b.title)).map((p) => ({ label: p.title, url: p.url })),
@@ -225,7 +268,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       themeColorLight: esc(design.themeColor.light),
       version,
       bodyClass,
-      brandIcon: esc(config.brandIcon || '🌿'),
+      logo: logo(),
       menu,
       content,
       footerLinks,
@@ -236,15 +279,16 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   }
 
   // ---- cards -----------------------------------------------------------------
-  const card = (p) => `<a class="card entry-card" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}">
-  <div class="card-thumb"><span class="card-icon" aria-hidden="true">${esc(p.section.icon)}</span>${p.status ? `<span class="card-status">${esc(p.status)}</span>` : ''}</div>
+  const isSpecimen = (p) => p.section.layout === 'specimen';
+  const card = (p, { cls = '', attrs = '' } = {}) => `<a class="card entry-card ${isSpecimen(p) ? 'is-specimen' : 'is-article'}${cls ? ` ${cls}` : ''}" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}"${attrs}>
+  <div class="card-thumb">${sectionTile(p.section, 'icon-tile-lg')}${p.status ? `<span class="card-status">${esc(p.status)}</span>` : ''}</div>
   <div class="card-body">
     <p class="card-kicker label"><span>${esc(p.section.singular)}</span>${p.date ? `<time datetime="${p.date}">${formatDate(p.date, shortFmt)}</time>` : ''}</p>
     <h3>${esc(p.title)}</h3>
     ${p.cross ? `<p class="card-cross">${esc(p.cross)}</p>` : ''}
     <p class="card-text">${esc(p.description)}</p>
     ${p.tags.length || p.draft || p.scheduled ? `<div class="chips">${chips(p)}</div>` : ''}
-    <span class="view-btn">View ${esc(p.section.singular.toLowerCase())}<span class="arrow" aria-hidden="true">→</span></span>
+    <span class="view-btn">${isSpecimen(p) ? `View ${esc(p.section.singular.toLowerCase())}` : 'Read more'}<span class="arrow" aria-hidden="true">→</span></span>
   </div>
 </a>`;
 
@@ -265,7 +309,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       </div>
     </div>
     <aside class="hero-panel" aria-label="The library at a glance">
-      <p class="label hero-panel-title"><span class="hero-panel-mark" aria-hidden="true">${esc(config.brandIcon || '🌿')}</span>The library</p>
+      <p class="label hero-panel-title"><span class="hero-panel-mark" aria-hidden="true">${logo()}</span>The library</p>
       <p class="hero-count"><span>${posts.length}</span> ${posts.length === 1 ? 'entry' : 'entries'}</p>
       <dl class="hero-stats">
         <div><dt>Sections</dt><dd>${sections.length}</dd></div>
@@ -284,7 +328,7 @@ ${pinnedHtml ? `<div class="container"><aside class="pinned">\n${pinnedHtml}</as
   </div>
   <div class="tile-grid">
 ${sections.map((x) => `    <a class="card tile" href="/${x.key}/">
-      <span class="tile-icon" aria-hidden="true">${esc(x.icon)}</span>
+      ${sectionTile(x, 'tile-icon')}
       <h3>${esc(x.label)}</h3>
       <p>${esc(x.blurb)}</p>
       <span class="tile-count label">${postsBySection.get(x.key).length} ${postsBySection.get(x.key).length === 1 ? 'entry' : 'entries'}<span class="arrow" aria-hidden="true">→</span></span>
@@ -297,7 +341,7 @@ ${sections.map((x) => `    <a class="card tile" href="/${x.key}/">
     <a href="/archive.html" class="btn btn-ghost">Browse the library</a>
   </div>
   <div class="card-grid">
-${homePosts.map(card).join('\n') || '<p class="empty">Nothing here yet.</p>'}
+${homePosts.map((x) => card(x)).join('\n') || '<p class="empty">Nothing here yet.</p>'}
   </div>
 </section>
 ${homeHtml ? `<section class="block about"><div class="container"><div class="prose">\n${homeHtml}</div></div></section>` : ''}`,
@@ -320,7 +364,7 @@ ${homeHtml ? `<section class="block about"><div class="container"><div class="pr
 </header>
 <div class="container block">
   <div class="card-grid">
-${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())} yet. Check back soon.</p>`}
+${list.map((x) => card(x)).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())} yet. Check back soon.</p>`}
   </div>
 </div>`,
     });
@@ -333,60 +377,81 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
       ? `<details class="toc card"><summary>On this page</summary><nav>${p.toc.map((h) => `<a href="#${h.id}" class="toc-depth-${h.depth}">${esc(h.text)}</a>`).join('')}</nav></details>`
       : '';
     const related = siblings.filter((x) => x !== p).slice(0, 3);
-    // The cross gets its own labelled block, so it is not repeated in the spec rows.
-    const specFacts = p.facts.filter(([label]) => label !== 'Cross');
-    renderPage(`${p.section.key}/${p.slug}/index.html`, {
-      title: p.title,
-      description: p.description,
-      urlPath: p.url,
-      bodyClass: 'page-entry',
-      meta: [
-        ['og:type', 'article'],
-        ...(p.date ? [['article:published_time', p.date]] : []),
-        ...p.tags.map((t) => ['article:tag', t]),
-      ],
-      content: `<article class="entry">
+    // Shared pieces. The cross gets its own labelled block, and articles show the status in
+    // their kicker, so neither is repeated as a spec row.
+    const specFacts = p.facts.filter(([label]) => label !== 'Cross' && (isSpecimen(p) || label !== 'Status'));
+    const crumbs = `<nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
+      </nav>`;
+    const spec = specFacts.length || p.cross ? `<div class="product-specs">
+${specFacts.length ? `        <dl class="spec">\n${specFacts.map(([k, v, icon]) => `          <div><dt>${icons.svg(icon) ?? ''}<span>${esc(k)}</span></dt><dd>${esc(v)}</dd></div>`).join('\n')}\n        </dl>` : ''}
+${p.cross ? `        <div class="product-cross"><p class="label">${icons.svg('git-merge') ?? ''}<span>Cross</span></p><p class="product-cross-value">${esc(p.cross)}</p></div>` : ''}
+      </div>` : '';
+    const traits = p.traits.length ? `<div class="product-traits">
+${p.traits.map(([kind, list]) => `        <div class="traits"><p class="label">${TRAIT_KINDS[kind]}</p><ul class="trait-list">${list.map((t) => `<li class="trait">${tile(t.icon, t.color)}<span>${esc(t.label)}</span></li>`).join('')}</ul></div>`).join('\n')}
+      </div>` : '';
+    const tags = p.tags.length || p.draft || p.scheduled ? `<div class="product-tags"><p class="label">Tags</p><div class="chips">${chips(p)}</div></div>` : '';
+    const meta = `<p class="product-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time>` : ''}<span>${p.readingTime} min read</span></p>`;
+    const details = (heading) => `<div class="entry-details" id="details">
+    <div class="container block entry-layout">
+      ${heading ? `<h2 class="tab-title">${heading}</h2>` : ''}
+      ${toc}
+      <div class="prose entry-body">
+${p.html}
+      </div>
+    </div>
+  </div>`;
+
+    // Specimen: a plant, cut or seed lot with its spec sheet. Article: everything else.
+    const entry = isSpecimen(p) ? `<article class="entry entry-specimen">
   <div class="container product">
     <div class="product-media">
       <div class="specimen">
-        <span class="specimen-icon" aria-hidden="true">${esc(p.section.icon)}</span>
+        ${sectionTile(p.section, 'icon-tile-xl')}
         <span class="specimen-kind">${esc(p.section.singular)}</span>
         ${p.facts.length ? `<span class="specimen-name">${esc(p.facts[0][1])}</span>` : ''}
         ${p.status ? `<span class="specimen-status">${esc(p.status)}</span>` : ''}
       </div>
     </div>
     <div class="product-summary">
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
-      </nav>
+      ${crumbs}
       <h1>${esc(p.title)}</h1>
       <p class="product-lede">${esc(p.description)}</p>
-${specFacts.length || p.cross ? `      <div class="product-specs">
-${specFacts.length ? `        <dl class="spec">\n${specFacts.map(([k, v]) => `          <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n        </dl>` : ''}
-${p.cross ? `        <div class="product-cross"><p class="label">Cross</p><p class="product-cross-value">${esc(p.cross)}</p></div>` : ''}
-      </div>` : ''}
-${p.tags.length || p.draft || p.scheduled ? `      <div class="product-tags"><p class="label">Tags</p><div class="chips">${chips(p)}</div></div>` : ''}
-      <div class="product-actions">
-        <a class="btn" href="#details">Read the details</a>
-        <a class="btn btn-ghost" href="/${p.section.key}/">All ${esc(p.section.short.toLowerCase())}</a>
-      </div>
-      <p class="product-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time>` : ''}<span>${p.readingTime} min read</span></p>
+      ${spec}
+      ${traits}
+      ${tags}
+      ${meta}
     </div>
   </div>
-  <div class="entry-details" id="details">
-    <div class="container block entry-layout">
-      <h2 class="tab-title">Description</h2>
-      ${toc}
-      <div class="prose entry-body">
-${p.html}
-      </div>
+  ${details('Notes')}
+</article>` : `<article class="entry entry-article">
+  <header class="article-head">
+    <div class="container">
+      ${crumbs}
+      <p class="article-kicker">${sectionTile(p.section)}<span class="label">${esc(p.section.singular)}</span>${p.status ? `<span class="chip chip-ok">${esc(p.status)}</span>` : ''}</p>
+      <h1>${esc(p.title)}</h1>
+      <p class="product-lede">${esc(p.description)}</p>
+      ${meta}
+      ${spec || traits || tags ? `<div class="article-facts">${spec}${traits}${tags}</div>` : ''}
     </div>
-  </div>
-</article>
+  </header>
+  ${details('')}
+</article>`;
+    renderPage(`${p.section.key}/${p.slug}/index.html`, {
+      title: p.title,
+      description: p.description,
+      urlPath: p.url,
+      bodyClass: `page-entry page-${isSpecimen(p) ? 'specimen' : 'article'}`,
+      meta: [
+        ['og:type', 'article'],
+        ...(p.date ? [['article:published_time', p.date]] : []),
+        ...p.tags.map((t) => ['article:tag', t]),
+      ],
+      content: `${entry}
 ${related.length ? `<section class="block container related" aria-labelledby="related-title">
   <div class="section-head section-head-rule"><h2 id="related-title">More ${esc(p.section.short.toLowerCase())}</h2></div>
   <div class="card-grid">
-${related.map(card).join('\n')}
+${related.map((x) => card(x)).join('\n')}
   </div>
 </section>` : ''}`,
     });
@@ -422,7 +487,7 @@ ${related.map(card).join('\n')}
 ${[...years].map(([y, list]) => `<div class="archive-year">
   <div class="year-header"><h2 class="year-title">${y}</h2><span class="post-count">${plural(list.length)}</span></div>
   <div class="card-grid">
-${list.map((p) => card(p).replace('class="card entry-card"', `class="card entry-card archive-post-link" data-slug="${p.section.key}/${p.slug}"`)).join('\n')}
+${list.map((p) => card(p, { cls: 'archive-post-link', attrs: ` data-slug="${p.section.key}/${p.slug}"` })).join('\n')}
   </div>
 </div>`).join('\n')}
 <p class="empty archive-empty" hidden>Nothing matches your filter.</p>
@@ -510,7 +575,7 @@ ${urls.map((u) => `  <url><loc>${xml(absUrl(u.loc))}</loc>${u.lastmod ? `<lastmo
     siteUrl,
     fontsUrl: design.fontsUrl,
     defaultMode: design.defaultMode,
-    sections: sections.map(({ key, label, icon }) => ({ key, label, icon })),
+    sections: sections.map(({ key, label }) => ({ key, label })),
     owner: config.repo.owner,
     repo: config.repo.name,
     branch: config.repo.branch || 'main',

@@ -8,7 +8,7 @@
   <meta name="theme-color" content="{{themeColor}}" data-dark="{{themeColor}}" data-light="{{themeColorLight}}">
   <meta name="color-scheme" content="dark light">
 {{meta}}
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>{{brandIcon}}</text></svg>">
+  <link rel="icon" href="/assets/favicon.svg?v={{version}}" type="image/svg+xml">
   <link rel="alternate" type="application/rss+xml" title="{{siteTitle}}" href="/feed.xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
 
   <header class="site-header">
     <div class="container">
-      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">{{brandIcon}}</span><span class="brand-name">{{siteTitle}}</span></a>
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">{{logo}}</span><span class="brand-name">{{siteTitle}}</span></a>
       <nav class="nav" id="mainNav" aria-label="Main">
         <ul>
 {{menu}}
@@ -52,7 +52,7 @@
     <div class="container">
       <div class="footer-top">
         <div class="footer-about">
-          <a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true">{{brandIcon}}</span><span class="brand-name">{{siteTitle}}</span></a>
+          <a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true">{{logo}}</span><span class="brand-name">{{siteTitle}}</span></a>
           <p class="footer-tagline">{{siteDescription}}</p>
         </div>
         <div class="footer-cols">{{footerLinks}}</div>

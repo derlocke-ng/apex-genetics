@@ -605,7 +605,7 @@ function viewEditor({ path, kind }) {
       <label class="field field-title">Title<input name="title" required placeholder="${kind === 'post' ? 'An interesting title' : 'About me'}"></label>
       <label class="field">Slug <small>(URL: ${kind === 'post' ? '/<b id="sectionPreview"></b>/<b id="slugPreview"></b>/' : '/<b id="slugPreview"></b>.html'})</small><input name="slug" required pattern="[a-z0-9-]+" spellcheck="false"></label>
       ${kind === 'post' ? `
-      <label class="field">Section<select name="type">${(config.sections || []).map((x) => `<option value="${h(x.key)}">${h(x.icon || '')} ${h(x.label)}</option>`).join('')}</select></label>
+      <label class="field">Section<select name="type">${(config.sections || []).map((x) => `<option value="${h(x.key)}">${h(x.label)}</option>`).join('')}</select></label>
       <label class="field">Date<input name="date" type="date" required></label>
       <label class="field field-wide">Tags <small>(comma separated)</small><input name="tags" placeholder="indoor, f1, keeper" spellcheck="false">
         ${allTags.length ? `<span class="tag-suggestions">${allTags.map((t) => `<button type="button" class="tag" data-tag="${h(t)}">#${h(t)}</button>`).join('')}</span>` : ''}

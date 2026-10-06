@@ -7,6 +7,8 @@ description: "Sample mother plant profile."
 strain: Sample Strain
 phenotype: Short, dense, resinous
 flowering: 8 weeks
+tastes: [citrus, pine, earthy]
+effects: [relaxed, giggly]
 status: Active
 ---
 

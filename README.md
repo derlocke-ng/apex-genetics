@@ -1,4 +1,4 @@
-# 🌿 Apex Genetics
+# Apex Genetics
 
 A personal cannabis breeding website: breeding **challenges**, **tutorials**, **grow reports**,
 **breeding reports**, **plans**, the **seed stash**, **mother plants** and **cuts**.
@@ -26,20 +26,31 @@ framework, hosted on GitHub Pages.
 Everything lives in `content/posts/*.md` (edit it in the admin at `/admin/` or by hand). The front matter
 `type:` picks the section:
 
-| `type` | Section |
-|---|---|
-| `challenges` | Breeding challenges |
-| `tutorials` | Tutorials |
-| `grow-reports` | Grow reports |
-| `breeding-reports` | Breeding reports |
-| `plans` | Plans |
-| `seed-stash` | Seed stash |
-| `mothers` | Mother plants |
-| `cuts` | Cuts |
+| `type` | Section | Layout |
+|---|---|---|
+| `challenges` | Breeding challenges | article |
+| `tutorials` | Tutorials | article |
+| `grow-reports` | Grow reports | article |
+| `breeding-reports` | Breeding reports | article |
+| `plans` | Plans | article |
+| `seed-stash` | Seed stash | specimen |
+| `mothers` | Mother plants | specimen |
+| `cuts` | Cuts | specimen |
 
-Optional spec-sheet fields shown on an entry: `strain`, `cross`, `generation`, `status`, `stage`, `sex`,
-`quantity`, `source`, `phenotype`, `flowering`, `yield`. Sections themselves (labels, icons, blurbs) are
-configured in `site.json`. Entries appear at `/<section>/<slug>/`.
+Entries appear at `/<section>/<slug>/`. **Article** entries are laid out for reading (title, lede, meta,
+then the text). **Specimen** entries (a plant, cut or seed lot) get an image panel and a spec sheet.
+
+Optional front matter, shown on any entry that has it:
+
+- Spec sheet: `strain`, `cross`, `generation`, `status`, `stage`, `sex`, `quantity`, `source`, `phenotype`,
+  `flowering`, `yield` (each with its own line icon).
+- Tastes and effects, shown as colored icon tiles: `tastes: [citrus, pine, earthy]`,
+  `effects: [relaxed, giggly]`. About 80 common terms have an icon and color (see `lib/traits.js`); any other
+  word still gets a tile. Add or change terms in `site.json`:
+  `"traits": { "tastes": { "skunk": { "icon": "wind", "color": "#C9CFD6" } } }`.
+
+Sections are configured in `site.json`: `label`, `short`, `singular`, `blurb`, `icon` (an icon name from
+`design/icons`), `color` (the tile color) and `layout` (`article`, the default, or `specimen`).
 
 Other files: `content/home.md` (about block), `content/pinned.md` (highlight on the home page),
 `content/pages/*.md` (extra pages such as About).
@@ -67,6 +78,13 @@ The look is a reusable template, so [derlocke-blog](https://github.com/derlocke-
 - `design/base.css`: neutral components (header, footer, buttons, cards, chips, prose, code) that only use those variables.
 - `design/skins/<preset>.css` (optional): preset-specific restyling, loaded last. `doctorschoice` has one;
   `apex` is simply the neutral look.
+- `design/icons/` + `lib/icons.js`: line icons from [Lucide](https://lucide.dev) (ISC license, see
+  `design/icons/LICENSE`), vendored one SVG per icon. To add one, copy its SVG from lucide.dev into the folder.
+  `.icon-tile` in `base.css` puts an icon on a colored square (`style="--tile:#hex"`); the preset's
+  `tileMix` and `tileInk` tokens decide how the color is used (solid pastel with a black icon in
+  `doctorschoice`, a tinted tile with a colored icon in `apex`).
+- `theme/logo.svg`: the site's logo mark, drawn in `currentColor`. The build inlines it in the header and
+  footer and makes `assets/favicon.svg` from it in the preset's `brand` colors.
 
 `design/base.css` and `theme/style.css` must not hard-code colors (a test enforces it), so every preset renders
 correctly from its tokens. Put anything that only makes sense for one preset into that preset's skin.

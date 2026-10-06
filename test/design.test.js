@@ -13,6 +13,7 @@ test('every preset produces variables, fonts and theme colors', () => {
     assert.match(d.css, /--font-display:/);
     assert.match(d.css, /--font-label:/);
     assert.equal(d.skin, preset);
+    assert.match(d.brand.bg, /^#[0-9a-f]{6}$/i);
     assert.match(d.fontsUrl, /^https:\/\/fonts\.googleapis\.com\/css2\?family=/);
     assert.ok(d.themeColor.dark && d.themeColor.light);
   }
