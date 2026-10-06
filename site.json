@@ -4,7 +4,6 @@
   "url": "https://derlocke-ng.github.io/apex-genetics",
   "language": "en",
   "author": "derlocke",
-  "brandIcon": "🌿",
   "design": { "preset": "apex" },
   "hero": {
     "eyebrow": "Personal breeding program",
@@ -17,14 +16,14 @@
     ]
   },
   "sections": [
-    { "key": "challenges", "label": "Breeding Challenges", "short": "Challenges", "singular": "Challenge", "icon": "🏆", "blurb": "Personal goals and experiments: the traits I'm chasing and how it's going." },
-    { "key": "tutorials", "label": "Tutorials", "short": "Tutorials", "singular": "Tutorial", "icon": "📖", "blurb": "Step-by-step guides for pollen collection, pollination, selection and more." },
-    { "key": "grow-reports", "label": "Grow Reports", "short": "Grows", "singular": "Grow report", "icon": "🌱", "blurb": "Week-by-week logs from the tent: what worked, what didn't." },
-    { "key": "breeding-reports", "label": "Breeding Reports", "short": "Breeding", "singular": "Breeding report", "icon": "🧬", "blurb": "Crosses, filial generations and phenotype hunts, with the results." },
-    { "key": "plans", "label": "Plans", "short": "Plans", "singular": "Plan", "icon": "🗺️", "blurb": "What's next: planned crosses, runs and projects." },
-    { "key": "seed-stash", "label": "Seed Stash", "short": "Seeds", "singular": "Seed lot", "icon": "🌰", "blurb": "Every seed lot on the shelf: cross, generation, count and source." },
-    { "key": "mothers", "label": "Mother Plants", "short": "Mothers", "singular": "Mother", "icon": "👑", "blurb": "The keepers: mother plants and their traits." },
-    { "key": "cuts", "label": "Cuts", "short": "Cuts", "singular": "Cut", "icon": "✂️", "blurb": "Clones and cuts in the library, and what's available." }
+    { "key": "challenges", "label": "Breeding Challenges", "short": "Challenges", "singular": "Challenge", "icon": "trophy", "color": "#FFD24F", "blurb": "Personal goals and experiments: the traits I'm chasing and how it's going." },
+    { "key": "tutorials", "label": "Tutorials", "short": "Tutorials", "singular": "Tutorial", "icon": "book-open", "color": "#A9B3EC", "blurb": "Step-by-step guides for pollen collection, pollination, selection and more." },
+    { "key": "grow-reports", "label": "Grow Reports", "short": "Grows", "singular": "Grow report", "icon": "sprout", "color": "#BFE39A", "blurb": "Week-by-week logs from the tent: what worked, what didn't." },
+    { "key": "breeding-reports", "label": "Breeding Reports", "short": "Breeding", "singular": "Breeding report", "icon": "dna", "color": "#FFB3C8", "blurb": "Crosses, filial generations and phenotype hunts, with the results." },
+    { "key": "plans", "label": "Plans", "short": "Plans", "singular": "Plan", "icon": "map", "color": "#9ED3F5", "blurb": "What's next: planned crosses, runs and projects." },
+    { "key": "seed-stash", "label": "Seed Stash", "short": "Seeds", "singular": "Seed lot", "icon": "bean", "color": "#FFBC8C", "layout": "specimen", "blurb": "Every seed lot on the shelf: cross, generation, count and source." },
+    { "key": "mothers", "label": "Mother Plants", "short": "Mothers", "singular": "Mother", "icon": "crown", "color": "#FFEB47", "layout": "specimen", "blurb": "The keepers: mother plants and their traits." },
+    { "key": "cuts", "label": "Cuts", "short": "Cuts", "singular": "Cut", "icon": "scissors", "color": "#FFAE78", "layout": "specimen", "blurb": "Clones and cuts in the library, and what's available." }
   ],
   "homePosts": 6,
   "footer": "© {year} Apex Genetics · Personal breeding project · For legal adult use only, where permitted",

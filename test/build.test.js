@@ -59,3 +59,33 @@ test('feed is well-formed enough and uses absolute URLs', () => {
   assert.equal((feed.match(/<item>/g) || []).length, result.posts.length);
   assert.doesNotMatch(feed, /(?:href|src)="\/(?!\/)/);
 });
+
+test('entries use the layout of their section', () => {
+  const read = (rel) => fs.readFileSync(path.join(out, rel), 'utf8');
+  const mother = read('mothers/mother-a/index.html');
+  assert.match(mother, /class="entry entry-specimen"/);
+  assert.match(mother, /class="trait"><span class="icon-tile" style="--tile:#FFEB47"/, 'citrus taste tile');
+  const challenge = read('challenges/compact-mold-resistant-hybrid/index.html');
+  assert.match(challenge, /class="entry entry-article"/);
+  assert.doesNotMatch(challenge, /class="specimen"/);
+  assert.doesNotMatch(read('index.html'), /View challenge/, 'article cards read, they do not "view"');
+});
+
+test('the logo and favicon replace the emoji', () => {
+  const home = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+  assert.match(home, /<span class="brand-mark"[^>]*><svg class="logo"/);
+  assert.match(home, /<link rel="icon" href="[^"]*assets\/favicon\.svg/);
+  assert.match(fs.readFileSync(path.join(out, 'assets/favicon.svg'), 'utf8'), /^<svg[^>]*><rect /);
+});
+
+test('the plant profile renders: spectrum, meters, free rows', () => {
+  const read = (rel) => fs.readFileSync(path.join(out, rel), 'utf8');
+  const mother = read('mothers/mother-a/index.html');
+  assert.match(mother, /<p class="label">Plant profile<\/p>/);
+  assert.match(mother, /class="spectrum-marker" style="left:35%"/);
+  assert.match(mother, /65% indica · 35% sativa/);
+  assert.match(mother, /aria-label="4 of 5"><i class="on"><\/i><i class="on"><\/i><i class="on"><\/i><i class="on"><\/i><i><\/i><\/span><span class="trait-value">Fast/);
+  assert.match(mother, /<span>Smell in veg<\/span><\/dt><dd>Pine and lemon peel/);
+  assert.doesNotMatch(read('seed-stash/f1-lot-001/index.html'), /% indica/, 'a genotype word does not invent percentages');
+  assert.match(read('grow-reports/sample-grow-run-1/index.html'), /<p class="label">Details<\/p>/);
+});

@@ -1,0 +1,223 @@
+/* Skin for the `doctorschoice` preset, measured from doctorschoice.farm:
+   black header/hero/footer, white page, #FF0000 markers and primary buttons
+   (#C00712 on hover and for red text on white), #E6E6E6 media panels,
+   #F8F5EF bands, #2A2A2A secondary text and dividers, #C8C8C8 only for
+   attributes on black (nav, hero copy and footer print are #FFFFFF). Montserrat throughout:
+   800 uppercase headings, 12px/800/.08em buttons with 2px borders,
+   12-14px/600-700/.08em labels. Hovers fill black, never red.
+   Loaded after theme/style.css when design.preset is "doctorschoice". */
+
+body{font-weight:500}
+h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em}
+.prose{font-size:1rem}
+.prose a{color:var(--text);text-decoration-color:currentColor;text-decoration-thickness:1px;text-underline-offset:.25em}
+.prose a:hover{color:var(--accent)}
+.prose blockquote{font-style:normal;border-left-width:4px}
+
+/* ---- labels ---- */
+.label,.eyebrow{font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
+.eyebrow{color:var(--marker)}
+.eyebrow-plain{color:var(--text)}
+.eyebrow-marker{gap:.75rem}
+.eyebrow-marker::before{width:12px;height:12px;border-radius:0}
+
+/* ---- header: not sticky on the reference (it scrolls away), 122px tall, logo block
+   full height, white 700 caps links spanning the bar with a 4px #FF0000 bar on hover ---- */
+.site-header{position:relative;border-bottom:0;-webkit-backdrop-filter:none;backdrop-filter:none}
+.site-header .container{width:100%;max-width:none;min-height:clamp(122px,6.3542vw,162.7px);padding-inline:0 clamp(1rem,2.5vw,2.5rem);gap:clamp(.75rem,2.5vw - 12px,2.5rem)}
+.brand{align-self:stretch;gap:0;font:800 .95rem/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
+.brand-mark{align-self:stretch;width:auto;height:auto;min-width:84px;border-radius:0;background:var(--marker);box-shadow:none;color:#fff;font-size:2rem}
+.site-header .brand-mark .logo{height:46%}
+.brand-name{padding-inline:1.25rem}
+.nav{align-self:stretch;align-items:stretch;margin-left:0}
+.header-tools{margin-left:auto}
+.nav ul{align-items:stretch;gap:0}
+.nav li{display:flex}
+.nav a{--nav-x:clamp(6px,1.6vw - 10px,18px);display:flex;align-items:center;flex:1;padding:0 var(--nav-x);color:var(--hd-text);font-size:clamp(12px,.9722vw,14px);font-weight:700;letter-spacing:.08em;line-height:1.43}
+.nav a::after,.nav a.active::after{content:"";position:absolute;left:var(--nav-x);right:var(--nav-x);top:auto;bottom:0;width:auto;height:4px;margin:0;border-radius:0;background:var(--marker);opacity:0}
+.nav a:hover::after,.nav a:focus-visible::after,.nav a.active::after{opacity:1}
+.icon-btn{width:44px;height:44px;color:var(--hd-text)}
+.site-header .icon{width:24px;height:24px}
+.icon-btn:hover{background:none;color:var(--marker)}
+@media (max-width:1100px){
+  .site-header .container{min-height:83px}
+  .brand-mark{min-width:57px;font-size:1.5rem}
+  .nav{padding:.5rem 1.5rem 1rem}
+  .nav a{min-height:56px;padding:0 0 0 1.25rem;border-bottom-color:var(--hd-border);font-size:1.25rem;font-weight:800;letter-spacing:-.01em}
+  .nav a::after,.nav a.active::after{left:0;right:auto;top:14px;bottom:14px;width:4px;height:auto}
+}
+@media (max-width:480px){
+  .site-header .container{gap:.5rem;padding-right:.5rem}
+  .brand-name{padding-inline:.9rem;font-size:.85rem}
+}
+
+/* ---- buttons ---- */
+.btn{min-height:44px;padding:10px 22px;border:2px solid var(--marker);border-radius:0;background:var(--marker);color:#fff;font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em}
+.btn:hover{background:#c00712;border-color:#c00712;color:#fff}
+.btn-ghost{background:transparent;border-color:var(--text);color:var(--text)}
+.btn-ghost:hover{background:var(--text);border-color:var(--text);color:var(--bg)}
+.hero .btn-ghost{border-color:var(--hd-text);color:var(--hd-text)}
+.hero .btn-ghost:hover{background:var(--hd-text);border-color:var(--hd-text);color:var(--hd-bg)}
+
+/* ---- chips: plain uppercase text, separated by slashes ---- */
+.chips{gap:.4rem}
+.chip{padding:0;border:0;border-radius:0;background:none;color:var(--text);font:500 .75rem/1.33 var(--font-label);letter-spacing:.08em}
+.chip + .chip::before{content:"/";margin-right:.4rem;color:var(--muted)}
+
+/* ---- hero & page hero (always black) ---- */
+.hero{padding:clamp(3.5rem,7vw,6rem) 0;background:var(--hd-bg)}
+.hero-grid{align-items:center}
+.hero h1{max-width:14ch;font-size:clamp(2.25rem,4.2vw,3.75rem);font-weight:800;line-height:.95;letter-spacing:-.03em;text-transform:uppercase}
+.hero-text,.page-hero .hero-text{color:var(--hd-text);font-size:1rem;font-weight:500;line-height:1.6}
+.hero-panel{border-radius:0;background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+.hero-panel-title{color:var(--hd-text);font-size:.75rem}
+.hero-panel-mark{color:var(--marker)}
+.hero-count{font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:.75rem}
+.hero-count span{font-weight:800;letter-spacing:-.03em}
+.hero-stats div{border-top-color:var(--hd-border)}
+.hero-stats a:hover{color:var(--marker)}
+
+.promo-banner{background:var(--marker);border:0}
+.promo-banner p{justify-content:flex-start;padding:1.1rem 0;color:#fff;font:800 clamp(1rem,2vw,1.375rem)/1.2 var(--font-display);letter-spacing:.01em;text-align:left}
+.promo-banner p::before{display:none}
+.promo-banner p::after{content:"→";width:auto;height:auto;background:none}
+
+.page-hero{background:var(--hd-bg)}
+.page-hero h1{font-weight:800;text-transform:uppercase;letter-spacing:-.02em}
+.page-hero .search-box input{border:2px solid var(--hd-text);border-radius:0;background:#fff;color:#000;font-weight:500}
+.page-hero .search-box input::placeholder{color:#6b6b6b}
+.page-hero .search-box input:focus{border-color:var(--marker);box-shadow:none}
+
+.pinned{border:2px solid var(--text);border-radius:0;background:var(--surface);font-weight:600}
+.pinned a{color:var(--accent)}
+
+/* ---- section heads ---- */
+.section-head h2{font-size:clamp(1.75rem,3vw,2.375rem);line-height:1.1}
+.section-head-center h2{font-size:1.5rem;text-transform:none}
+.section-head-rule{padding-bottom:13px;border-bottom:2px solid var(--text)}
+
+/* ---- category boxes ---- */
+.tile-grid{gap:.75rem}
+a.tile{padding:1.25rem 1.25rem 1.5rem;border:2px solid var(--text);border-radius:0;background:transparent}
+a.card.tile:hover{transform:none;box-shadow:none;border-color:var(--text);background:var(--text);color:var(--bg)}
+.tile .tile-icon{margin-bottom:1rem}
+.tile h3{font-size:1.25rem;letter-spacing:-.02em}
+.tile p{color:inherit;font-size:.875rem;font-weight:500;line-height:1.43}
+.tile-count{font-size:.75rem;color:var(--accent)}
+a.tile:hover .tile-count{color:var(--marker)}
+
+/* ---- journal cards: no box, grey media panel, outlined button ---- */
+.card-grid{gap:2.5rem 1rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+a.entry-card{gap:14px;overflow:visible;border:0;border-radius:0;background:transparent}
+a.card.entry-card:hover{transform:none;box-shadow:none}
+.card-thumb{border:0;background:var(--placeholder)}
+.card-status{left:.75rem;top:.75rem;padding:.35rem .5rem;border-radius:0;background:var(--marker);color:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
+.card-body{gap:.5rem;padding:0}
+.card-kicker{align-items:center;gap:10px;color:var(--text);font:600 .75rem/1.33 var(--font-label);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.card-kicker::before{content:"";width:10px;height:10px;background:var(--marker);flex:none}
+.card-kicker span,.card-kicker span:not(:last-child)::after{color:inherit}
+.entry-card h3{font-size:1.125rem;line-height:1.22;letter-spacing:-.01em;text-transform:uppercase;transition:color .15s}
+a.entry-card:hover h3{color:var(--accent)}
+.card-cross{color:var(--text);font:500 .75rem/1.33 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.card-text{color:var(--text);font-size:.875rem;font-weight:500;line-height:1.43}
+.entry-card .chips{margin:0}
+.view-btn{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:auto;padding:0 22px;border:2px solid var(--text);color:var(--text);font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em;text-transform:uppercase;transition:background .15s,color .15s}
+.view-btn .arrow{display:none}
+.is-article .view-btn{display:none}
+.card-body>:nth-last-child(2){margin-bottom:.75rem}
+a.entry-card:hover .view-btn{background:var(--text);color:var(--bg)}
+
+/* ---- entry page, laid out like the reference product page: breadcrumb above the title,
+   1px #E6E6E6 dividers between groups, label/value spec rows, a red-square list,
+   56px buttons and a full-width divider above the description ---- */
+.breadcrumb{gap:.25rem .4rem;margin-bottom:1rem;color:var(--text);font:600 .75rem/1.45 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.breadcrumb a{color:var(--text)}
+.breadcrumb a:hover{color:var(--accent)}
+.breadcrumb [aria-hidden]{opacity:1}
+.specimen{border:0;border-radius:0;background:var(--placeholder)}
+.specimen::after{display:none}
+.specimen-kind{color:var(--text);font-size:.75rem;letter-spacing:.08em}
+.specimen-name{font-weight:800;letter-spacing:-.02em}
+.specimen-status{left:1rem;top:1rem;padding:.4rem .6rem;border:0;border-radius:0;background:var(--marker);color:#fff}
+.product-summary{padding-top:0}
+.product-summary h1{margin:0 0 1.5rem;font-size:clamp(2.25rem,3.2vw,3rem);font-weight:800;line-height:1;letter-spacing:-.02em;text-transform:uppercase}
+.product-lede{margin:0 0 1.75rem;color:color-mix(in srgb,var(--text) 93%,var(--bg));font-size:1rem;font-weight:500;line-height:1.5}
+.product-specs,.product-profile,.product-traits,.product-tags{margin:0 0 1.75rem;padding-top:1.75rem;border-top:1px solid var(--surface2)}
+.product-profile>.label{margin-bottom:1rem;color:var(--text);font:800 .75rem/1.4 var(--font-label);letter-spacing:.12em}
+.genotype-head .icon{width:18px;height:18px;color:var(--text)}
+.genotype-name{font:800 .875rem/1.3 var(--font-display);text-transform:uppercase}
+.genotype-split{color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.08em;text-transform:uppercase}
+.spectrum{height:8px;border-radius:0}
+.spectrum-marker{width:4px;height:22px;margin:-11px 0 0 -2px;border-radius:0;background:var(--text);box-shadow:none}
+.spectrum-ends{color:var(--text);font:500 .75rem/1 var(--font-label);letter-spacing:.14em}
+.spec-profile dd{justify-content:flex-end}
+.meter i{width:10px;height:10px;border-radius:0;background:var(--surface2)}
+.meter i.on{background:var(--text)}
+.spec{border:0}
+.spec div{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:.6rem 0;border:0}
+.spec dt{gap:1.125rem;color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.14em}
+.spec dt .icon{width:18px;height:18px}
+.product-cross .label .icon{width:14px;height:14px}
+.spec dd{font:800 .875rem/1.3 var(--font-display);text-align:right;text-transform:uppercase}
+.product-cross{margin-top:1.5rem}
+.product-cross .label,.product-tags .label,.traits .label{margin:0 0 .6rem;color:var(--text);font:500 .75rem/1.4 var(--font-label);letter-spacing:.14em}
+.product-tags .label,.traits .label{font-weight:800;letter-spacing:.12em}
+.traits .label{margin-bottom:1rem}
+.trait-list{gap:1rem 2.5rem}
+.trait{gap:.9rem;font:700 1rem/1.3 var(--font-body)}
+.trait .icon-tile{width:2.125rem;height:2.125rem}
+.product-cross-value{color:var(--text);font:700 1rem/1.4 var(--font-body)}
+.product-tags .chips{flex-direction:column;gap:0}
+.product-tags .chip{display:flex;align-items:center;gap:10px;padding:.4rem 0;color:var(--text);font:500 .875rem/1.4 var(--font-label);letter-spacing:.02em}
+.product-tags .chip::before,.product-tags .chip + .chip::before{content:"";width:6px;height:6px;margin:0;background:var(--marker);flex:none}
+.product-meta{color:var(--text);font-size:.875rem;font-weight:500}
+.entry-details{border-top:1px solid var(--surface2)}
+.tab-title{display:none}
+.article-kicker .label{color:var(--text);font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
+.article-kicker .chip{color:var(--accent);font-weight:700}
+.article-head h1{font-size:clamp(2.25rem,4vw,3.5rem);font-weight:800;line-height:1;letter-spacing:-.02em;text-transform:uppercase}
+.article-head .product-lede{margin-bottom:1rem}
+.article-facts{border-top:0;padding-top:0}
+.toc{border:2px solid var(--text);border-radius:0}
+.toc summary{color:var(--text);font-weight:700;letter-spacing:.08em}
+.toc a{color:var(--text);font-weight:500}
+.toc a:hover{color:var(--accent)}
+@media (max-width:860px){
+  /* gallery runs edge to edge under the header, square, like the reference */
+  .entry .product{padding-top:0}
+  .product-media{margin-inline:-1.25rem}
+  .specimen{aspect-ratio:1}
+}
+
+/* ---- home about band ---- */
+.about{border:0}
+.about .prose h2{font-size:clamp(1.75rem,3vw,2.375rem);text-transform:uppercase}
+
+/* ---- library ---- */
+.tag-filter-buttons{gap:.5rem}
+.tag-btn{min-height:44px;padding:0 18px;border:2px solid var(--text);border-radius:0;color:var(--text);font:800 .75rem/1.33 var(--font-body);letter-spacing:.08em;text-transform:uppercase}
+.tag-btn:hover{border-color:var(--text);background:var(--text);color:var(--bg)}
+.tag-btn.active{border-color:var(--marker);background:var(--marker);color:#fff}
+.tag-count{font-weight:600;opacity:.7}
+.year-header{padding-bottom:13px;border-bottom:2px solid var(--text)}
+.year-title{font-size:1.5rem}
+.post-count{color:var(--text);font-weight:600;letter-spacing:.08em}
+
+/* ---- footer ---- */
+.site-footer{padding:3.5rem 0 2.5rem;color:var(--hd-text);font-size:1rem}
+.site-footer .brand{flex-direction:column;align-items:flex-start;gap:1rem}
+.site-footer .brand-mark{width:84px;height:84px;min-width:0;font-size:2.5rem}
+.site-footer .brand-name{padding:0}
+.footer-tagline{max-width:34ch;color:var(--hd-text);font-size:.75rem;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
+.footer-cols{gap:2rem clamp(2rem,6vw,5rem)}
+.footer-col{gap:0}
+.footer-col h2{margin:0 0 6px;color:var(--hd-text);font:700 .875rem/1.43 var(--font-label);letter-spacing:.08em}
+.site-footer .footer-col a{color:var(--hd-text);font-weight:600;letter-spacing:-.01em;line-height:1.75}
+.site-footer a:hover,.site-footer .footer-col a:hover{color:var(--marker)}
+@media (max-width:600px){
+  .footer-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem 1.25rem;width:100%}
+  .site-footer .footer-col a{display:flex;align-items:center;min-height:44px}
+}
+.footer-legal{max-width:none;color:var(--hd-text);font-size:.75rem;font-weight:500;line-height:1.5;letter-spacing:.04em;text-transform:uppercase}
+
+.not-found h1{font-weight:800;text-transform:uppercase}

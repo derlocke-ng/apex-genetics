@@ -16,18 +16,18 @@ import {
 } from './lib/content.js';
 import { createMarkdown, rewriteRootUrls } from './lib/markdown.js';
 import { createDesign } from './lib/design.js';
+import { createIcons, safeColor } from './lib/icons.js';
+import { traitList, resolveTrait, TRAIT_KINDS, PALETTE } from './lib/traits.js';
+import { profileOf } from './lib/profile.js';
+import { leafSvg } from './lib/leaf.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const at = (...p) => path.join(ROOT, ...p);
 
 const RESERVED = new Set(['index', 'archive', '404', 'feed', 'sitemap', 'robots', 'search', 'admin', 'posts', 'assets', 'media']);
 
-// Optional front matter shown as a "spec sheet" on an entry page.
-const FACTS = [
-  ['strain', 'Strain'], ['cross', 'Cross'], ['generation', 'Generation'], ['status', 'Status'],
-  ['stage', 'Stage'], ['sex', 'Sex'], ['quantity', 'Quantity'], ['source', 'Source'],
-  ['phenotype', 'Phenotype'], ['flowering', 'Flowering'], ['yield', 'Yield'],
-];
+// Section layouts: "article" (reading) or "specimen" (a plant, cut or seed lot with a spec sheet).
+const LAYOUTS = new Set(['article', 'specimen']);
 
 const DEFAULTS = {
   title: 'My Site',
@@ -37,7 +37,7 @@ const DEFAULTS = {
   author: '',
   design: { preset: 'apex' },
   hero: { eyebrow: '', title: '', text: '', cta: [] },
-  sections: [{ key: 'entries', label: 'Entries', short: 'Entries', singular: 'Entry', icon: '🌱', blurb: '' }],
+  sections: [{ key: 'entries', label: 'Entries', short: 'Entries', singular: 'Entry', icon: 'sprout', blurb: '' }],
   homePosts: 6,
   feedPosts: 20,
   nav: [],
@@ -59,10 +59,11 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   config.design = { ...DEFAULTS.design, ...config.design };
   config.hero = { ...DEFAULTS.hero, ...config.hero };
   const sections = (Array.isArray(config.sections) && config.sections.length ? config.sections : DEFAULTS.sections)
-    .map((x) => ({ short: x.label, singular: x.label, icon: '🌱', blurb: '', ...x }));
+    .map((x) => ({ short: x.label, singular: x.label, icon: 'sprout', color: '', blurb: '', layout: 'article', ...x }));
   const sectionByKey = new Map(sections.map((x) => [x.key, x]));
   for (const x of sections) {
     if (x.key !== slugify(x.key) || RESERVED.has(x.key)) throw new Error(`site.json: section key "${x.key}" must be a URL-friendly name that is not reserved`);
+    if (!LAYOUTS.has(x.layout)) throw new Error(`site.json: section "${x.key}" has layout "${x.layout}", expected ${[...LAYOUTS].join(' or ')}`);
   }
   config.repo = { ...DEFAULTS.repo, ...config.repo };
   const siteUrl = String(config.url || '').replace(/\/+$/, '');
@@ -71,7 +72,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   const year = String(new Date().getFullYear());
 
   const dateFmt = new Intl.DateTimeFormat(config.language, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-  const dayFmt = new Intl.DateTimeFormat(config.language, { month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const shortFmt = new Intl.DateTimeFormat(config.language, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const formatDate = (d, fmt = dateFmt) => (d ? fmt.format(new Date(`${d}T00:00:00Z`)) : '');
 
   const render = createMarkdown(Marked, {
@@ -110,8 +111,11 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       scheduled: Boolean(date && date > now),
       type,
       section,
-      cross: data.cross ? String(data.cross) : '',
-      facts: FACTS.filter(([k]) => data[k] !== undefined && data[k] !== '').map(([k, label]) => [label, String(data[k])]),
+      // Plant profile (lib/profile.js): identity facts, cross, genotype, growth traits, extra rows.
+      ...(({ facts, cross, genotype, traits, extra }) => ({ facts, cross, genotype, plantTraits: traits, extra }))(profileOf(data)),
+      sensory: Object.keys(TRAIT_KINDS)
+        .map((kind) => [kind, traitList(data[kind]).map((t) => resolveTrait(kind, t, (config.traits || {})[kind]))])
+        .filter(([, list]) => list.length),
       status: data.status ? String(data.status) : '',
       body,
       readingTime: readingTime(body),
@@ -160,7 +164,14 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   if (fs.existsSync(at('public'))) fs.cpSync(at('public'), out, { recursive: true });
 
   const design = createDesign(config.design);
-  const css = `${design.css}${fs.readFileSync(at('design/base.css'), 'utf8')}\n${fs.readFileSync(at('theme/style.css'), 'utf8')}`;
+  // Preset skin (design/skins/<preset>.css) goes last so it can restyle the site layout.
+  const skinFile = at('design/skins', `${design.skin}.css`);
+  const css = [
+    design.css,
+    fs.readFileSync(at('design/base.css'), 'utf8'),
+    fs.readFileSync(at('theme/style.css'), 'utf8'),
+    ...(fs.existsSync(skinFile) ? [fs.readFileSync(skinFile, 'utf8')] : []),
+  ].join('\n');
   const js = fs.readFileSync(at('theme/site.js'));
   const version = crypto.createHash('sha1').update(css).update(js).digest('hex').slice(0, 8);
   write('assets/style.css', css);
@@ -168,23 +179,54 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
 
   const layout = fs.readFileSync(at('theme/layout.html'), 'utf8');
 
+  // Logo (theme/logo.svg, drawn in currentColor) and a favicon tile in the preset's brand colors.
+  // Without a logo file, site.json's brandIcon text (or the title's initial) stands in.
+  const logoSvg = fs.existsSync(at('theme/logo.svg')) ? fs.readFileSync(at('theme/logo.svg'), 'utf8') : '';
+  const logoParts = logoSvg.match(/<svg[^>]*\sviewBox="([\d.\s-]+)"[^>]*>([\s\S]*)<\/svg>/);
+  const logoInner = logoParts ? logoParts[2].replace(/<title>[\s\S]*?<\/title>/, '').trim() : '';
+  const logo = (cls = 'logo') => (logoParts
+    ? `<svg class="${cls}" viewBox="${logoParts[1]}" aria-hidden="true" focusable="false">${logoInner}</svg>`
+    : esc(config.brandIcon || String(config.title).charAt(0)));
+  const brand = {
+    bg: safeColor(design.brand.bg, '#000000'),
+    fg: safeColor(design.brand.fg, '#ffffff'),
+    radius: Math.max(0, Math.min(32, Number(design.brand.radius) || 0)),
+  };
+  const faviconSvg = logoParts
+    ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${brand.radius}" fill="${brand.bg}"/><svg x="8" y="7" width="48" height="50" viewBox="${logoParts[1]}" color="${brand.fg}">${logoInner}</svg></svg>`
+    : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${esc(config.brandIcon || String(config.title).charAt(0))}</text></svg>`;
+  write('assets/favicon.svg', faviconSvg);
+
+  // Icon tiles: a line icon on a colored square (see .icon-tile in design/base.css).
+  // A section icon that is not an icon name (e.g. an emoji) is shown as text instead.
+  const icons = createIcons(at('design/icons'));
+  const tile = (icon, color, cls = '', inner = null) =>
+    `<span class="icon-tile${cls ? ` ${cls}` : ''}" style="--tile:${safeColor(color, 'var(--accent)')}" aria-hidden="true">${inner ?? icons.svg(icon) ?? `<span class="icon-text">${esc(icon)}</span>`}</span>`;
+  const sectionTile = (x, cls = '') => tile(x.icon, x.color, cls);
+  // Plants with a known genotype show a leaf drawn for it (broad indica to narrow sativa).
+  const plantTile = (p, cls = '') => (p.genotype?.sativa != null
+    ? tile('', p.section.color, cls, leafSvg(p.genotype.sativa))
+    : sectionTile(p.section, cls));
+  for (const x of sections) {
+    if (/^[a-z0-9-]+$/.test(x.icon) && !icons.has(x.icon)) warnings.push(`site.json: section "${x.key}" uses icon "${x.icon}", which is not in design/icons`);
+  }
+  for (const p of posts) {
+    for (const [, list] of p.sensory) {
+      for (const t of list) if (!icons.has(t.icon)) warnings.push(`content/posts/${p.slug}.md: icon "${t.icon}" for "${t.label}" is not in design/icons`);
+    }
+  }
+
   const navItems = [
     ...sections.map((x) => ({ label: x.short, url: `/${x.key}/` })),
     ...pages.filter((p) => p.menu).sort((a, b) => a.order - b.order || a.title.localeCompare(b.title)).map((p) => ({ label: p.title, url: p.url })),
     ...(Array.isArray(config.nav) ? config.nav : []),
   ];
 
-  const chips = (p, kind = true) => [
-    ...(kind ? [`<span class="chip chip-accent">${esc(p.section.singular)}</span>`] : []),
-    ...(p.status ? [`<span class="chip chip-ok">${esc(p.status)}</span>`] : []),
-    ...p.tags.map((t) => `<span class="chip">${esc(t)}</span>`),
-  ].join('');
-
   const statusBadge = (p) =>
-    p.draft ? ' <span class="chip">draft</span>' : p.scheduled ? ' <span class="chip">scheduled</span>' : '';
+    p.draft ? '<span class="chip">draft</span>' : p.scheduled ? '<span class="chip">scheduled</span>' : '';
 
-  const entryMeta = (p) =>
-    `<div class="entry-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time> · ` : ''}${p.readingTime} min read${statusBadge(p)}</div>`;
+  // Status is shown on the thumbnail/specimen badge, so chips are just tags (plus draft/scheduled).
+  const chips = (p) => p.tags.map((t) => `<span class="chip">${esc(t)}</span>`).join('') + statusBadge(p);
 
   function renderPage(rel, { title, description = config.description, content, bodyClass = '', urlPath, meta = [], root }) {
     const depth = rel.split('/').length - 1;
@@ -213,16 +255,18 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
     const vars = {
       lang: esc(config.language),
       defaultMode: design.defaultMode,
+      skin: esc(design.skin),
       pageTitle: esc(title ? `${title} · ${config.title}` : config.title),
       siteTitle: esc(config.title),
       description: esc(description),
+      siteDescription: esc(config.description),
       meta: metaTags.join('\n'),
       fontsUrl: esc(design.fontsUrl),
       themeColor: esc(design.themeColor.dark),
       themeColorLight: esc(design.themeColor.light),
       version,
       bodyClass,
-      brandIcon: esc(config.brandIcon || '🌿'),
+      logo: logo(),
       menu,
       content,
       footerLinks,
@@ -233,14 +277,16 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   }
 
   // ---- cards -----------------------------------------------------------------
-  const card = (p) => `<a class="card entry-card" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}">
-  <div class="card-thumb"><span class="card-icon" aria-hidden="true">${esc(p.section.icon)}</span><span class="card-kind">${esc(p.section.singular)}</span></div>
+  const isSpecimen = (p) => p.section.layout === 'specimen';
+  const card = (p, { cls = '', attrs = '' } = {}) => `<a class="card entry-card ${isSpecimen(p) ? 'is-specimen' : 'is-article'}${cls ? ` ${cls}` : ''}" href="${p.url}" data-tags="${esc(entryTags(p).join(' '))}"${attrs}>
+  <div class="card-thumb">${isSpecimen(p) ? plantTile(p, 'icon-tile-lg') : sectionTile(p.section, 'icon-tile-lg')}${p.status ? `<span class="card-status">${esc(p.status)}</span>` : ''}</div>
   <div class="card-body">
+    <p class="card-kicker label"><span>${esc(p.section.singular)}</span>${p.date ? `<time datetime="${p.date}">${formatDate(p.date, shortFmt)}</time>` : ''}</p>
     <h3>${esc(p.title)}</h3>
-    <div class="chips">${chips(p, false)}</div>
-    ${p.cross ? `<p class="card-cross">${esc(p.cross)}</p>` : `<p class="card-text">${esc(p.description)}</p>`}
-    ${entryMeta(p)}
-    <span class="view-btn">View ${esc(p.section.singular.toLowerCase())}</span>
+    ${p.cross ? `<p class="card-cross">${esc(p.cross)}</p>` : ''}
+    <p class="card-text">${esc(p.description)}</p>
+    ${p.tags.length || p.draft || p.scheduled ? `<div class="chips">${chips(p)}</div>` : ''}
+    <span class="view-btn">${isSpecimen(p) ? `View ${esc(p.section.singular.toLowerCase())}` : 'Read more'}<span class="arrow" aria-hidden="true">→</span></span>
   </div>
 </a>`;
 
@@ -260,11 +306,15 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
         ${(hero.cta || []).map((b, i) => `<a class="btn${i ? ' btn-ghost' : ''}" href="${esc(b.url)}">${esc(b.label)}</a>`).join('\n        ')}
       </div>
     </div>
-    <div class="hero-art" aria-hidden="true">
-      <span class="hero-art-icon">${esc(config.brandIcon || '🌿')}</span>
-      <span class="hero-art-count">${posts.length}</span>
-      <span class="hero-art-label">entries in the library</span>
-    </div>
+    <aside class="hero-panel" aria-label="The library at a glance">
+      <p class="label hero-panel-title"><span class="hero-panel-mark" aria-hidden="true">${logo()}</span>The library</p>
+      <p class="hero-count"><span>${posts.length}</span> ${posts.length === 1 ? 'entry' : 'entries'}</p>
+      <dl class="hero-stats">
+        <div><dt>Sections</dt><dd>${sections.length}</dd></div>
+${posts[0] ? `        <div><dt>Latest</dt><dd><a href="${posts[0].url}">${esc(posts[0].title)}</a></dd></div>` : ''}
+${posts[0]?.date ? `        <div><dt>Updated</dt><dd><time datetime="${posts[0].date}">${formatDate(posts[0].date)}</time></dd></div>` : ''}
+      </dl>
+    </aside>
   </div>
 </section>
 ${hero.banner ? `<div class="promo-banner"><div class="container"><p>${esc(hero.banner)}</p></div></div>` : ''}
@@ -276,23 +326,23 @@ ${pinnedHtml ? `<div class="container"><aside class="pinned">\n${pinnedHtml}</as
   </div>
   <div class="tile-grid">
 ${sections.map((x) => `    <a class="card tile" href="/${x.key}/">
-      <span class="tile-icon" aria-hidden="true">${esc(x.icon)}</span>
+      ${sectionTile(x, 'tile-icon')}
       <h3>${esc(x.label)}</h3>
       <p>${esc(x.blurb)}</p>
-      <span class="tile-count">${postsBySection.get(x.key).length} ${postsBySection.get(x.key).length === 1 ? 'entry' : 'entries'} →</span>
+      <span class="tile-count label">${postsBySection.get(x.key).length} ${postsBySection.get(x.key).length === 1 ? 'entry' : 'entries'}<span class="arrow" aria-hidden="true">→</span></span>
     </a>`).join('\n')}
   </div>
 </section>
 <section class="block container" aria-labelledby="latest-title">
   <div class="section-head section-head-rule">
     <div><p class="eyebrow eyebrow-marker">Live breeding journal</p><h2 id="latest-title">Latest updates</h2></div>
-    <a href="/archive.html" class="btn btn-ghost">Browse the library →</a>
+    <a href="/archive.html" class="btn btn-ghost">Browse the library</a>
   </div>
   <div class="card-grid">
-${homePosts.map(card).join('\n') || '<p class="empty">Nothing here yet.</p>'}
+${homePosts.map((x) => card(x)).join('\n') || '<p class="empty">Nothing here yet.</p>'}
   </div>
 </section>
-${homeHtml ? `<section class="block container about"><div class="prose">\n${homeHtml}</div></section>` : ''}`,
+${homeHtml ? `<section class="block about"><div class="container"><div class="prose">\n${homeHtml}</div></div></section>` : ''}`,
   });
 
   // ---- sections ------------------------------------------------------------
@@ -305,14 +355,14 @@ ${homeHtml ? `<section class="block container about"><div class="prose">\n${home
       bodyClass: 'page-section',
       content: `<header class="page-hero">
   <div class="container">
-    <p class="eyebrow">${esc(x.icon)} ${esc(config.title)}</p>
+    <p class="eyebrow eyebrow-marker">${esc(config.title)} · ${list.length === 1 ? '1 entry' : `${list.length} entries`}</p>
     <h1>${esc(x.label)}</h1>
     ${x.blurb ? `<p class="hero-text">${esc(x.blurb)}</p>` : ''}
   </div>
 </header>
 <div class="container block">
   <div class="card-grid">
-${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())} yet. Check back soon.</p>`}
+${list.map((x) => card(x)).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())} yet. Check back soon.</p>`}
   </div>
 </div>`,
     });
@@ -325,63 +375,99 @@ ${list.map(card).join('\n') || `<p class="empty">No ${esc(x.label.toLowerCase())
       ? `<details class="toc card"><summary>On this page</summary><nav>${p.toc.map((h) => `<a href="#${h.id}" class="toc-depth-${h.depth}">${esc(h.text)}</a>`).join('')}</nav></details>`
       : '';
     const related = siblings.filter((x) => x !== p).slice(0, 3);
-    const metaRows = [
-      ['Category', `<a href="/${p.section.key}/">${esc(p.section.label)}</a>`],
-      ...(p.tags.length ? [['Tags', p.tags.map((t) => esc(t)).join(', ')]] : []),
-      ...(p.date ? [['Published', `<time datetime="${p.date}">${formatDate(p.date)}</time>`]] : []),
-      ['Reading time', `${p.readingTime} min`],
+    // Shared pieces. Articles show the status in their kicker, so it is not repeated as a row.
+    const specFacts = p.facts.filter(([label]) => isSpecimen(p) || label !== 'Status');
+    const specimenName = (p.facts.find(([label]) => label === 'Strain') || [])[1] || p.cross || (p.facts[0] || [])[1] || '';
+    const crumbs = `<nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
+      </nav>`;
+    const spec = specFacts.length || p.cross ? `<div class="product-specs">
+${specFacts.length ? `        <dl class="spec">\n${specFacts.map(([k, v, icon]) => `          <div><dt>${icons.svg(icon) ?? ''}<span>${esc(k)}</span></dt><dd>${esc(v)}</dd></div>`).join('\n')}\n        </dl>` : ''}
+${p.cross ? `        <div class="product-cross"><p class="label">${icons.svg('git-merge') ?? ''}<span>Cross</span></p><p class="product-cross-value">${esc(p.cross)}</p></div>` : ''}
+      </div>` : '';
+    const row = (label, icon, value) => `<div><dt>${icons.svg(icon) ?? ''}<span>${esc(label)}</span></dt><dd>${value}</dd></div>`;
+    const meter = (level) => `<span class="meter" role="img" aria-label="${level} of 5">${[1, 2, 3, 4, 5].map((i) => `<i${i <= level ? ' class="on"' : ''}></i>`).join('')}</span>`;
+    const g = p.genotype;
+    const profileRows = [
+      ...(g && g.sativa == null ? [row('Genotype', 'dna', esc(g.label))] : []),
+      ...p.plantTraits.map((t) => row(t.label, t.icon, `${t.level ? meter(t.level) : ''}<span class="trait-value">${esc(t.value)}</span>`)),
+      ...p.extra.map(([label, value, icon]) => row(label, icon, esc(value))),
     ];
+    const profile = (g && g.sativa != null) || profileRows.length ? `<div class="product-profile">
+        <p class="label">${g || p.plantTraits.length ? 'Plant profile' : 'Details'}</p>
+${g && g.sativa != null ? `        <div class="genotype">
+          <p class="genotype-head">${icons.svg('dna') ?? ''}<span class="genotype-name">${esc(g.label)}</span>${g.exact ? `<span class="genotype-split">${100 - g.sativa}% indica · ${g.sativa}% sativa</span>` : ''}</p>
+          <div class="spectrum" style="--from:${PALETTE.periwinkle};--to:${PALETTE.fern}" role="img" aria-label="${esc(g.label)}: ${g.sativa}% sativa"><span class="spectrum-marker" style="left:${g.sativa}%"></span></div>
+          <p class="spectrum-ends"><span>Indica</span><span>Sativa</span></p>
+        </div>` : ''}
+${profileRows.length ? `        <dl class="spec spec-profile">\n${profileRows.map((r) => `          ${r}`).join('\n')}\n        </dl>` : ''}
+      </div>` : '';
+    const traits = p.sensory.length ? `<div class="product-traits">
+${p.sensory.map(([kind, list]) => `        <div class="traits"><p class="label">${TRAIT_KINDS[kind]}</p><ul class="trait-list">${list.map((t) => `<li class="trait">${tile(t.icon, t.color)}<span>${esc(t.label)}</span></li>`).join('')}</ul></div>`).join('\n')}
+      </div>` : '';
+    const tags = p.tags.length || p.draft || p.scheduled ? `<div class="product-tags"><p class="label">Tags</p><div class="chips">${chips(p)}</div></div>` : '';
+    const meta = `<p class="product-meta">${p.date ? `<time datetime="${p.date}">${formatDate(p.date)}</time>` : ''}<span>${p.readingTime} min read</span></p>`;
+    const details = (heading) => `<div class="entry-details" id="details">
+    <div class="container block entry-layout">
+      ${heading ? `<h2 class="tab-title">${heading}</h2>` : ''}
+      ${toc}
+      <div class="prose entry-body">
+${p.html}
+      </div>
+    </div>
+  </div>`;
+
+    // Specimen: a plant, cut or seed lot with its spec sheet. Article: everything else.
+    const entry = isSpecimen(p) ? `<article class="entry entry-specimen">
+  <div class="container product">
+    <div class="product-media">
+      <div class="specimen">
+        ${plantTile(p, 'icon-tile-xl')}
+        <span class="specimen-kind">${esc(p.section.singular)}${p.genotype ? ` · ${esc(p.genotype.label)}` : ''}</span>
+        ${specimenName ? `<span class="specimen-name">${esc(specimenName)}</span>` : ''}
+        ${p.status ? `<span class="specimen-status">${esc(p.status)}</span>` : ''}
+      </div>
+    </div>
+    <div class="product-summary">
+      ${crumbs}
+      <h1>${esc(p.title)}</h1>
+      <p class="product-lede">${esc(p.description)}</p>
+      ${spec}
+      ${profile}
+      ${traits}
+      ${tags}
+      ${meta}
+    </div>
+  </div>
+  ${details('Notes')}
+</article>` : `<article class="entry entry-article">
+  <header class="article-head">
+    <div class="container">
+      ${crumbs}
+      <p class="article-kicker">${sectionTile(p.section)}<span class="label">${esc(p.section.singular)}</span>${p.status ? `<span class="chip chip-ok">${esc(p.status)}</span>` : ''}</p>
+      <h1>${esc(p.title)}</h1>
+      <p class="product-lede">${esc(p.description)}</p>
+      ${meta}
+      ${spec || profile || traits || tags ? `<div class="article-facts">${spec}${profile}${traits}${tags}</div>` : ''}
+    </div>
+  </header>
+  ${details('')}
+</article>`;
     renderPage(`${p.section.key}/${p.slug}/index.html`, {
       title: p.title,
       description: p.description,
       urlPath: p.url,
-      bodyClass: 'page-entry',
+      bodyClass: `page-entry page-${isSpecimen(p) ? 'specimen' : 'article'}`,
       meta: [
         ['og:type', 'article'],
         ...(p.date ? [['article:published_time', p.date]] : []),
         ...p.tags.map((t) => ['article:tag', t]),
       ],
-      content: `<nav class="breadcrumb container" aria-label="Breadcrumb">
-  <a href="/">Home</a><span aria-hidden="true">/</span><a href="/${p.section.key}/">${esc(p.section.label)}</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span>
-</nav>
-<article class="entry">
-  <div class="container product">
-    <div class="product-media">
-      <div class="specimen">
-        <span class="specimen-icon" aria-hidden="true">${esc(p.section.icon)}</span>
-        <span class="specimen-kind">${esc(p.section.singular)}</span>
-        ${p.facts.length ? `<span class="specimen-name">${esc(p.facts[0][1])}</span>` : ''}
-        ${p.status ? `<span class="specimen-status">${esc(p.status)}</span>` : ''}
-      </div>
-    </div>
-    <div class="product-summary">
-      <p class="eyebrow eyebrow-marker"><a href="/${p.section.key}/">${esc(p.section.label)}</a></p>
-      <h1>${esc(p.title)}</h1>
-      <div class="chips">${chips(p, false)}</div>
-      ${p.cross ? `<p class="product-cross">${esc(p.cross)}</p>` : ''}
-      <p class="product-lede">${esc(p.description)}</p>
-${p.facts.length ? `      <dl class="spec">\n${p.facts.map(([k, v]) => `        <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n      </dl>` : ''}
-      <div class="product-actions">
-        <a class="btn" href="#details">Read the details</a>
-        <a class="btn btn-ghost" href="/${p.section.key}/">All ${esc(p.section.short.toLowerCase())}</a>
-      </div>
-      <dl class="product-meta">
-${metaRows.map(([k, v]) => `        <div><dt>${k}</dt><dd>${v}</dd></div>`).join('\n')}
-      </dl>
-    </div>
-  </div>
-  <div class="container block entry-layout" id="details">
-    <h2 class="tab-title">Description</h2>
-    ${toc}
-    <div class="prose entry-body">
-${p.html}
-    </div>
-  </div>
-</article>
+      content: `${entry}
 ${related.length ? `<section class="block container related" aria-labelledby="related-title">
   <div class="section-head section-head-rule"><h2 id="related-title">More ${esc(p.section.short.toLowerCase())}</h2></div>
   <div class="card-grid">
-${related.map(card).join('\n')}
+${related.map((x) => card(x)).join('\n')}
   </div>
 </section>` : ''}`,
     });
@@ -402,7 +488,7 @@ ${related.map(card).join('\n')}
     bodyClass: 'page-archive',
     content: `<header class="page-hero">
   <div class="container">
-    <p class="eyebrow">📚 Library</p>
+    <p class="eyebrow eyebrow-marker">Library</p>
     <h1>Everything in one place</h1>
     <p class="hero-text">${plural(posts.length)}. Filter by section or search the full text.</p>
     <div class="search-box"><input type="search" id="archiveSearch" placeholder="Search strains, crosses, tutorials…" aria-label="Search" autocomplete="off"></div>
@@ -411,13 +497,13 @@ ${related.map(card).join('\n')}
 <div class="container block">
   <div class="tag-filter-buttons">
     <button class="tag-btn active" data-tag="all" aria-pressed="true">All</button>
-    ${sections.map((x) => `<button class="tag-btn" data-tag="${esc(x.key)}" aria-pressed="false">${esc(x.icon)} ${esc(x.short)} <span class="tag-count">${postsBySection.get(x.key).length}</span></button>`).join('\n    ')}
+    ${sections.map((x) => `<button class="tag-btn" data-tag="${esc(x.key)}" aria-pressed="false">${esc(x.short)} <span class="tag-count">${postsBySection.get(x.key).length}</span></button>`).join('\n    ')}
   </div>
   <div class="archive-content">
 ${[...years].map(([y, list]) => `<div class="archive-year">
   <div class="year-header"><h2 class="year-title">${y}</h2><span class="post-count">${plural(list.length)}</span></div>
   <div class="card-grid">
-${list.map((p) => card(p).replace('class="card entry-card"', `class="card entry-card archive-post-link" data-slug="${p.section.key}/${p.slug}"`)).join('\n')}
+${list.map((p) => card(p, { cls: 'archive-post-link', attrs: ` data-slug="${p.section.key}/${p.slug}"` })).join('\n')}
   </div>
 </div>`).join('\n')}
 <p class="empty archive-empty" hidden>Nothing matches your filter.</p>
@@ -427,7 +513,7 @@ ${list.map((p) => card(p).replace('class="card entry-card"', `class="card entry-
 
   write('search.json', JSON.stringify(posts.map((p) => ({
     s: `${p.section.key}/${p.slug}`,
-    t: `${p.title} ${p.section.label} ${p.tags.join(' ')} ${p.facts.map(([, v]) => v).join(' ')} ${p.description} ${markdownToText(p.body)}`.toLowerCase().replace(/\s+/g, ' '),
+    t: `${p.title} ${p.section.label} ${p.tags.join(' ')} ${[...p.facts, ...p.extra].map(([, v]) => v).join(' ')} ${p.cross} ${p.genotype?.label ?? ''} ${p.plantTraits.map((x) => x.value).join(' ')} ${p.sensory.flatMap(([, list]) => list.map((x) => x.label)).join(' ')} ${p.description} ${markdownToText(p.body)}`.toLowerCase().replace(/\s+/g, ' '),
   }))));
 
   // ---- pages ---------------------------------------------------------------
@@ -498,14 +584,14 @@ ${urls.map((u) => `  <url><loc>${xml(absUrl(u.loc))}</loc>${u.lastmod ? `<lastmo
 
   // ---- admin ---------------------------------------------------------------
   fs.cpSync(at('admin'), path.join(out, 'admin'), { recursive: true });
-  for (const f of ['content.js', 'markdown.js', 'vault.js']) write(`admin/lib/${f}`, fs.readFileSync(at('lib', f)));
+  for (const f of ['content.js', 'markdown.js', 'vault.js', 'profile.js', 'traits.js']) write(`admin/lib/${f}`, fs.readFileSync(at('lib', f)));
   write('admin/vendor/marked.esm.js', fs.readFileSync(at('node_modules/marked/lib/marked.esm.js'), 'utf8').replace(/\n\/\/# sourceMappingURL=.*$/m, ''));
   write('admin/config.json', JSON.stringify({
     siteTitle: config.title,
     siteUrl,
     fontsUrl: design.fontsUrl,
     defaultMode: design.defaultMode,
-    sections: sections.map(({ key, label, icon }) => ({ key, label, icon })),
+    sections: sections.map(({ key, label, layout }) => ({ key, label, layout })),
     owner: config.repo.owner,
     repo: config.repo.name,
     branch: config.repo.branch || 'main',
