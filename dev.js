@@ -12,7 +12,7 @@ import { build } from './build.js';
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(ROOT, 'dist');
 const PORT = Number(process.env.PORT) || 8000;
-const WATCH = ['content', 'theme', 'public', 'admin', 'lib', 'site.json'];
+const WATCH = ['content', 'theme', 'design', 'public', 'admin', 'lib', 'site.json'];
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
   '.xml': 'application/xml', '.txt': 'text/plain', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg',

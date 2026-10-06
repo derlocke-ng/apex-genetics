@@ -1,44 +1,35 @@
 {
-  "title": "derlocke.net",
-  "description": "Linux desktop, privacy and the Kiwi ecosystem: notes and release news from derlocke.",
-  "url": "https://derlocke.net",
+  "title": "Apex Genetics",
+  "description": "A personal cannabis breeding program: breeding challenges, tutorials, grow and breeding reports, plans, the seed stash, mother plants and cuts.",
+  "url": "https://derlocke-ng.github.io/apex-genetics",
   "language": "en",
   "author": "derlocke",
-  "email": "info@derlocke.net",
-  "prompt": {
-    "command": "cd",
-    "path": "/var/home/derlocke"
-  },
-  "homePosts": 2,
-  "dock": {
-    "label": "Kiwi:",
-    "links": [
-      {
-        "label": "🥝 Updater",
-        "url": "/projects.html#kiwi-updater",
-        "title": "kiwi-updater"
-      },
-      {
-        "label": "📚 Catalog",
-        "url": "/projects.html#kiwi-catalog",
-        "title": "kiwi-catalog"
-      },
-      {
-        "label": "🛡️ Kill Switch",
-        "url": "/projects.html#kiwi-killswitch",
-        "title": "kiwi-killswitch"
-      },
-      {
-        "label": "🏡 Ensconce",
-        "url": "/projects.html#ensconce",
-        "title": "ensconce"
-      }
+  "brandIcon": "🌿",
+  "design": { "preset": "apex" },
+  "hero": {
+    "eyebrow": "Personal breeding program",
+    "title": "Breeding better cannabis, one generation at a time.",
+    "text": "Challenges, tutorials, grow and breeding reports, plans, the seed stash, mother plants and cuts, all documented in one place.",
+    "cta": [
+      { "label": "Browse the library", "url": "/archive.html" },
+      { "label": "Meet the mothers", "url": "/mothers/" }
     ]
   },
-  "footer": "© {year} derlocke.net · <a href=\"mailto:info@derlocke.net\">Contact</a> · <a href=\"/feed.xml\">RSS</a> · Powered by <a href=\"https://github.com/derlocke-ng/kiwi-blog\">🥝 Kiwi Blog</a>",
+  "sections": [
+    { "key": "challenges", "label": "Breeding Challenges", "short": "Challenges", "singular": "Challenge", "icon": "🏆", "blurb": "Personal goals and experiments: the traits I'm chasing and how it's going." },
+    { "key": "tutorials", "label": "Tutorials", "short": "Tutorials", "singular": "Tutorial", "icon": "📖", "blurb": "Step-by-step guides for pollen collection, pollination, selection and more." },
+    { "key": "grow-reports", "label": "Grow Reports", "short": "Grows", "singular": "Grow report", "icon": "🌱", "blurb": "Week-by-week logs from the tent: what worked, what didn't." },
+    { "key": "breeding-reports", "label": "Breeding Reports", "short": "Breeding", "singular": "Breeding report", "icon": "🧬", "blurb": "Crosses, filial generations and phenotype hunts, with the results." },
+    { "key": "plans", "label": "Plans", "short": "Plans", "singular": "Plan", "icon": "🗺️", "blurb": "What's next: planned crosses, runs and projects." },
+    { "key": "seed-stash", "label": "Seed Stash", "short": "Seeds", "singular": "Seed lot", "icon": "🌰", "blurb": "Every seed lot on the shelf: cross, generation, count and source." },
+    { "key": "mothers", "label": "Mother Plants", "short": "Mothers", "singular": "Mother", "icon": "👑", "blurb": "The keepers: mother plants and their traits." },
+    { "key": "cuts", "label": "Cuts", "short": "Cuts", "singular": "Cut", "icon": "✂️", "blurb": "Clones and cuts in the library, and what's available." }
+  ],
+  "homePosts": 6,
+  "footer": "© {year} Apex Genetics · Personal breeding project · For legal adult use only, where permitted · <a href=\"/feed.xml\">RSS</a>",
   "repo": {
     "owner": "derlocke-ng",
-    "name": "derlocke-blog",
+    "name": "apex-genetics",
     "branch": "main"
   }
 }

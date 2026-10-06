@@ -1,1 +1,1 @@
-📌 **New:** [kiwi-updater 1.7](/posts/kiwi-updater/) installs and updates open-source apps straight from git catalogs on Silverblue and Bluefin. No accounts, no store. See all [Kiwi projects](/projects.html).
+🧬 **Current focus:** [Challenge #1, a compact, mold-resistant hybrid](/challenges/compact-mold-resistant-hybrid/).

@@ -88,10 +88,12 @@ function listen(target, type, fn, opts) {
   onCleanup(() => target.removeEventListener(type, fn, opts));
 }
 
+const sectionOf = (type) => (config.sections || []).find((x) => x.key === type) || (config.sections || [])[0] || { key: 'posts', label: 'Entries' };
+
 const kb = (bytes) => (bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
 function liveUrl(doc) {
-  if (doc.kind === 'post') return `${siteBase}posts/${doc.slug}/`;
+  if (doc.kind === 'post') return `${siteBase}${sectionOf(doc.data.type).key}/${doc.slug}/`;
   if (doc.kind === 'page') return `${siteBase}${doc.slug}.html`;
   return siteBase;
 }
@@ -509,17 +511,17 @@ function viewPages() {
 // ---------------------------------------------------------------------------
 
 function previewDocument(kind) {
-  const light = (() => { try { return localStorage.getItem('derlocke-darkMode') === 'false'; } catch { return false; } })();
+  const light = (() => { try { return localStorage.getItem('apex-light') === 'true'; } catch { return false; } })();
   const header = kind === 'post'
-    ? '<header class="post-header"><h1 class="post-title" id="pvTitle"></h1><div class="post-meta" id="pvMeta"></div><div class="post-tags" id="pvTags"></div></header>'
+    ? '<header class="preview-header"><h1 id="pvTitle"></h1><div class="entry-meta" id="pvMeta"></div><div class="chips" id="pvTags"></div></header>'
     : '';
   return `<!DOCTYPE html><html class="${light ? 'light' : ''}"><head><meta charset="utf-8">
 <base href="${h(siteBase)}">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cantarell:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="${h(config.fontsUrl || '')}">
 <link rel="stylesheet" href="assets/style.css?v=${h(config.version || '')}">
 <style>body{display:block;min-height:0}.preview-wrap{padding:1rem}main{margin:0 auto}</style>
-</head><body class="page-${kind === 'post' ? 'post' : 'page'}"><div class="background-layer"></div><div class="preview-wrap"><main>
-<article class="${kind === 'post' ? 'post' : 'page'}">${header}<div class="post-body" id="pvBody"></div></article>
+</head><body class="page-${kind === 'post' ? 'post' : 'page'}"><div class="preview-wrap"><main>
+<article class="${kind === 'post' ? 'entry' : 'page'}">${header}<div class="prose" id="pvBody"></div></article>
 </main></div></body></html>`;
 }
 
@@ -578,7 +580,7 @@ function viewEditor({ path, kind }) {
   const backHref = kind === 'post' ? '#/posts' : '#/pages';
   const draftKey = DRAFT_PREFIX + (doc ? doc.path : `new-${kind}`);
   const uploads = new Map();
-  const data = doc ? { ...doc.data } : kind === 'post' ? { title: '', date: today(), tags: [] } : { title: '', menu: false };
+  const data = doc ? { ...doc.data } : kind === 'post' ? { title: '', date: today(), type: sectionOf().key, tags: [] } : { title: '', menu: false };
   const allTags = [...new Set([...docs.values()].filter((d) => d.kind === 'post').flatMap((d) => splitTags(d.data.tags)))].sort();
   let slugTouched = !isNew;
 
@@ -596,10 +598,11 @@ function viewEditor({ path, kind }) {
     ${isRaw ? `<p class="hint">${doc.path === PATHS.pinned ? 'Shown highlighted at the top of the home page. Leave empty to hide it.' : 'Introduction shown at the top of the home page.'}</p>` : `
     <div class="meta-grid">
       <label class="field field-title">Title<input name="title" required placeholder="${kind === 'post' ? 'An interesting title' : 'About me'}"></label>
-      <label class="field">Slug <small>(URL: ${kind === 'post' ? '/posts/<b id="slugPreview"></b>/' : '/<b id="slugPreview"></b>.html'})</small><input name="slug" required pattern="[a-z0-9-]+" spellcheck="false"></label>
+      <label class="field">Slug <small>(URL: ${kind === 'post' ? '/<b id="sectionPreview"></b>/<b id="slugPreview"></b>/' : '/<b id="slugPreview"></b>.html'})</small><input name="slug" required pattern="[a-z0-9-]+" spellcheck="false"></label>
       ${kind === 'post' ? `
+      <label class="field">Section<select name="type">${(config.sections || []).map((x) => `<option value="${h(x.key)}">${h(x.icon || '')} ${h(x.label)}</option>`).join('')}</select></label>
       <label class="field">Date<input name="date" type="date" required></label>
-      <label class="field field-wide">Tags <small>(comma separated)</small><input name="tags" placeholder="linux, tutorial" spellcheck="false">
+      <label class="field field-wide">Tags <small>(comma separated)</small><input name="tags" placeholder="indoor, f1, keeper" spellcheck="false">
         ${allTags.length ? `<span class="tag-suggestions">${allTags.map((t) => `<button type="button" class="tag" data-tag="${h(t)}">#${h(t)}</button>`).join('')}</span>` : ''}
       </label>` : `
       <label class="check"><input type="checkbox" name="menu"> Show in menu</label>
@@ -654,6 +657,7 @@ function viewEditor({ path, kind }) {
       field('draft').checked = d.draft === true;
       if (kind === 'post') {
         field('date').value = normalizeDate(d.date);
+        field('type').value = sectionOf(d.type).key;
         field('tags').value = splitTags(d.tags).join(', ');
       } else {
         field('menu').checked = d.menu === true;
@@ -670,6 +674,7 @@ function viewEditor({ path, kind }) {
     next.title = field('title').value.trim();
     if (kind === 'post') {
       next.date = field('date').value;
+      next.type = field('type').value || undefined;
       next.tags = splitTags(field('tags').value);
     } else {
       next.menu = field('menu').checked;
@@ -679,7 +684,7 @@ function viewEditor({ path, kind }) {
     next.description = field('description').value.trim() || undefined;
     next.draft = field('draft').checked ? true : undefined;
     const ordered = {};
-    for (const k of ['title', 'date', 'tags', 'description', 'menu', 'order', 'draft', ...Object.keys(next)]) {
+    for (const k of ['title', 'date', 'type', 'tags', 'description', 'menu', 'order', 'draft', ...Object.keys(next)]) {
       if (next[k] !== undefined && !(k in ordered)) ordered[k] = next[k];
     }
     return { data: ordered, body: ta.value, slug: slugify(field('slug').value) };
@@ -702,7 +707,7 @@ function viewEditor({ path, kind }) {
     if (kind === 'post') {
       pdoc.getElementById('pvTitle').textContent = d.title || 'Untitled';
       pdoc.getElementById('pvMeta').textContent = `${d.date || ''} · ${readingTime(body)} min read${d.draft ? ' · draft' : ''}`;
-      pdoc.getElementById('pvTags').innerHTML = (d.tags || []).map((t) => `<span class="tag-chip">#${h(t)}</span>`).join('');
+      pdoc.getElementById('pvTags').innerHTML = (d.tags || []).map((t) => `<span class="chip">${h(t)}</span>`).join('');
     }
   };
   const schedulePreview = () => {
@@ -729,6 +734,7 @@ function viewEditor({ path, kind }) {
   const updateStatus = () => {
     const body = ta.value;
     $('#stats').textContent = `${wordCount(body)} words · ${readingTime(body)} min read${uploads.size ? ` · ${uploads.size} image(s) to upload` : ''}`;
+    if (!isRaw && kind === 'post') $('#sectionPreview').textContent = field('type').value;
     if (!isRaw) $('#slugPreview').textContent = slugify(field('slug').value) || '…';
     if (!isRaw) saveBtn.textContent = field('draft').checked ? 'Save draft' : 'Publish';
   };
