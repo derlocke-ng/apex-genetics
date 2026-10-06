@@ -536,8 +536,9 @@ function previewDocument(kind) {
   const light = (() => {
     try {
       const saved = localStorage.getItem('apex-light');
-      return saved === null ? config.defaultMode === 'light' : saved === 'true';
-    } catch { return config.defaultMode === 'light'; }
+      if (saved !== null) return saved === 'true';
+    } catch { /* storage unavailable */ }
+    return config.defaultMode === 'system' ? !window.matchMedia?.('(prefers-color-scheme: dark)').matches : config.defaultMode === 'light';
   })();
   const header = kind === 'post'
     ? '<header class="preview-header"><h1 id="pvTitle"></h1><div class="entry-meta" id="pvMeta"></div><div class="chips" id="pvTags"></div></header>'

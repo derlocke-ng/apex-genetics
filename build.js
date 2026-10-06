@@ -179,14 +179,24 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
 
   const layout = fs.readFileSync(at('theme/layout.html'), 'utf8');
 
-  // Logo (theme/logo.svg, drawn in currentColor) and a favicon tile in the preset's brand colors.
-  // Without a logo file, site.json's brandIcon text (or the title's initial) stands in.
-  const logoSvg = fs.existsSync(at('theme/logo.svg')) ? fs.readFileSync(at('theme/logo.svg'), 'utf8') : '';
-  const logoParts = logoSvg.match(/<svg[^>]*\sviewBox="([\d.\s-]+)"[^>]*>([\s\S]*)<\/svg>/);
-  const logoInner = logoParts ? logoParts[2].replace(/<title>[\s\S]*?<\/title>/, '').trim() : '';
-  const logo = (cls = 'logo') => (logoParts
-    ? `<svg class="${cls}" viewBox="${logoParts[1]}" aria-hidden="true" focusable="false">${logoInner}</svg>`
+  // Brand marks in theme/, drawn in currentColor: logo.svg (the icon), logo-solid.svg (the icon
+  // for small sizes) and wordmark.svg (the name). Missing files fall back to text: site.json's
+  // brandIcon (or the title's initial) for the icon, the title for the name.
+  const readMark = (file) => {
+    const src = fs.existsSync(at('theme', file)) ? fs.readFileSync(at('theme', file), 'utf8') : '';
+    const m = src.match(/<svg[^>]*\sviewBox="([\d.\s-]+)"[^>]*>([\s\S]*)<\/svg>/);
+    return m && { viewBox: m[1], inner: m[2].replace(/<title>[\s\S]*?<\/title>/, '').trim() };
+  };
+  const marks = { outline: readMark('logo.svg'), wordmark: readMark('wordmark.svg') };
+  marks.solid = readMark('logo-solid.svg') || marks.outline;
+  const markSvg = (mark, cls) => `<svg class="${cls}" viewBox="${mark.viewBox}" aria-hidden="true" focusable="false">${mark.inner}</svg>`;
+  const logoParts = marks.outline && [null, marks.solid.viewBox, marks.solid.inner];
+  const logoInner = logoParts ? logoParts[2] : '';
+  // The preset picks the header mark: the outline icon, or the solid one where it sits small.
+  const logo = (style = design.brand.mark || 'outline', cls = 'logo') => (marks.outline
+    ? markSvg(style === 'solid' ? marks.solid : marks.outline, cls)
     : esc(config.brandIcon || String(config.title).charAt(0)));
+  const wordmark = marks.wordmark ? markSvg(marks.wordmark, 'wordmark') : esc(config.title);
   const brand = {
     bg: safeColor(design.brand.bg, '#000000'),
     fg: safeColor(design.brand.fg, '#ffffff'),
@@ -195,7 +205,24 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
   const faviconSvg = logoParts
     ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="${brand.radius}" fill="${brand.bg}"/><svg x="8" y="7" width="48" height="50" viewBox="${logoParts[1]}" color="${brand.fg}">${logoInner}</svg></svg>`
     : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${esc(config.brandIcon || String(config.title).charAt(0))}</text></svg>`;
-  write('assets/favicon.svg', faviconSvg);
+  // Brand favicons in public/ (favicon.svg, .ico, apple-touch-icon, manifest) win over the generated one.
+  const has = (f) => fs.existsSync(at('public', f));
+  if (!has('favicon.svg')) write('assets/favicon.svg', faviconSvg);
+  const iconLinks = [
+    ...(has('favicon.ico') ? ['<link rel="icon" href="/favicon.ico" sizes="48x48">'] : []),
+    has('favicon.svg') ? '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
+      : `<link rel="icon" href="/assets/favicon.svg?v=${version}" type="image/svg+xml">`,
+    ...(has('apple-touch-icon.png') ? ['<link rel="apple-touch-icon" href="/apple-touch-icon.png">'] : []),
+    ...(has('site.webmanifest') ? ['<link rel="manifest" href="/site.webmanifest">'] : []),
+  ].map((l) => `  ${l}`).join('\n');
+
+  // Fonts: self-hosted files from design/fonts are preloaded; Google Fonts only when a preset uses them.
+  if (fs.existsSync(at('design/fonts'))) fs.cpSync(at('design/fonts'), path.join(out, 'assets/fonts'), { recursive: true });
+  const fontLinks = [
+    ...design.fontFiles.map((f) => `<link rel="preload" href="/assets/${esc(f)}" as="font" type="font/woff2" crossorigin>`),
+    ...(design.fontsUrl ? ['<link rel="preconnect" href="https://fonts.googleapis.com">', '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+      `<link rel="stylesheet" href="${esc(design.fontsUrl)}">`] : []),
+  ].map((l) => `  ${l}`).join('\n');
 
   // Icon tiles: a line icon on a colored square (see .icon-tile in design/base.css).
   // A section icon that is not an icon name (e.g. an emoji) is shown as text instead.
@@ -261,7 +288,9 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       description: esc(description),
       siteDescription: esc(config.description),
       meta: metaTags.join('\n'),
-      fontsUrl: esc(design.fontsUrl),
+      fontLinks,
+      icons: iconLinks,
+      wordmark,
       themeColor: esc(design.themeColor.dark),
       themeColorLight: esc(design.themeColor.light),
       version,
@@ -307,7 +336,7 @@ export async function build({ drafts = false, out = at('dist'), quiet = false } 
       </div>
     </div>
     <aside class="hero-panel" aria-label="The library at a glance">
-      <p class="label hero-panel-title"><span class="hero-panel-mark" aria-hidden="true">${logo()}</span>The library</p>
+      <p class="label hero-panel-title"><span class="hero-panel-mark" aria-hidden="true">${logo('solid')}</span>The library</p>
       <p class="hero-count"><span>${posts.length}</span> ${posts.length === 1 ? 'entry' : 'entries'}</p>
       <dl class="hero-stats">
         <div><dt>Sections</dt><dd>${sections.length}</dd></div>

@@ -8,13 +8,11 @@
   <meta name="theme-color" content="{{themeColor}}" data-dark="{{themeColor}}" data-light="{{themeColorLight}}">
   <meta name="color-scheme" content="dark light">
 {{meta}}
-  <link rel="icon" href="/assets/favicon.svg?v={{version}}" type="image/svg+xml">
+{{icons}}
   <link rel="alternate" type="application/rss+xml" title="{{siteTitle}}" href="/feed.xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="{{fontsUrl}}">
+{{fontLinks}}
   <link rel="stylesheet" href="/assets/style.css?v={{version}}">
-  <script>try{var s=localStorage.getItem('apex-light');if(s!==null)document.documentElement.classList.add(s==='true'?'light':'dark')}catch(e){}</script>
+  <script>try{var r=document.documentElement,s=localStorage.getItem('apex-light');if(s!==null)r.classList.add(s==='true'?'light':'dark');else if(r.dataset.defaultMode==='system'&&matchMedia('(prefers-color-scheme: dark)').matches)r.classList.add('dark')}catch(e){}</script>
   <script src="/assets/site.js?v={{version}}" defer></script>
 </head>
 <body class="{{bodyClass}}">
@@ -22,7 +20,7 @@
 
   <header class="site-header">
     <div class="container">
-      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">{{logo}}</span><span class="brand-name">{{siteTitle}}</span></a>
+      <a class="brand" href="/" aria-label="{{siteTitle}}"><span class="brand-mark" aria-hidden="true">{{logo}}</span><span class="brand-name" aria-hidden="true">{{wordmark}}</span></a>
       <nav class="nav" id="mainNav" aria-label="Main">
         <ul>
 {{menu}}
@@ -52,7 +50,7 @@
     <div class="container">
       <div class="footer-top">
         <div class="footer-about">
-          <a class="brand footer-brand" href="/"><span class="brand-mark" aria-hidden="true">{{logo}}</span><span class="brand-name">{{siteTitle}}</span></a>
+          <a class="brand footer-brand" href="/" aria-label="{{siteTitle}}"><span class="brand-mark" aria-hidden="true">{{logo}}</span><span class="brand-name" aria-hidden="true">{{wordmark}}</span></a>
           <p class="footer-tagline">{{siteDescription}}</p>
         </div>
         <div class="footer-cols">{{footerLinks}}</div>

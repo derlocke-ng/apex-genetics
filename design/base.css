@@ -31,6 +31,7 @@ p{margin:0 0 1em;text-wrap:pretty}
 .brand-name{white-space:nowrap}
 .brand-mark{display:inline-flex;align-items:center;justify-content:center;width:2.1rem;height:2.1rem;border-radius:calc(var(--radius) * .7);background:color-mix(in srgb,var(--accent) 14%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent);color:var(--accent);font-size:1.1rem}
 .logo{display:block;width:auto;height:64%}
+.wordmark{display:block;width:auto;height:.8rem}
 .nav{margin-left:auto;display:flex;align-items:center}
 .nav ul{display:flex;gap:.1rem;list-style:none;margin:0;padding:0}
 .nav a{position:relative;display:block;padding:.5rem .7rem;color:var(--hd-muted,var(--muted));text-decoration:none;font-size:.875rem;font-weight:500;text-transform:var(--caps)}
@@ -41,8 +42,8 @@ p{margin:0 0 1em;text-wrap:pretty}
 .icon-btn:hover{color:var(--hd-text,var(--text));background:color-mix(in srgb,var(--hd-text,var(--text)) 7%,transparent)}
 .icon{width:18px;height:18px;display:block}
 .theme-toggle .icon-moon{display:none}
-:root.light .theme-toggle .icon-sun,:root[data-default-mode="light"]:not(.dark) .theme-toggle .icon-sun{display:none}
-:root.light .theme-toggle .icon-moon,:root[data-default-mode="light"]:not(.dark) .theme-toggle .icon-moon{display:block}
+:root.light .theme-toggle .icon-sun,:root:is([data-default-mode="light"],[data-default-mode="system"]):not(.dark) .theme-toggle .icon-sun{display:none}
+:root.light .theme-toggle .icon-moon,:root:is([data-default-mode="light"],[data-default-mode="system"]):not(.dark) .theme-toggle .icon-moon{display:block}
 .menu-toggle{display:none}
 .menu-toggle .icon-close{display:none}
 .menu-toggle[aria-expanded="true"] .icon-open{display:none}

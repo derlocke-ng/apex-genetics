@@ -39,7 +39,7 @@ test('the doctorschoice preset is light-first with always-black header tokens', 
   assert.match(d.css, /--marker:#ff0000;/);
   assert.equal(d.themeColor.light, '#000000', 'browser chrome matches the black header');
   assert.ok(fs.existsSync(new URL('../design/skins/doctorschoice.css', import.meta.url)), 'doctorschoice ships its skin');
-  assert.equal(createDesign({ preset: 'apex' }).defaultMode, 'dark');
+  assert.equal(createDesign({ preset: 'apex' }).defaultMode, 'system');
 });
 
 test('font roles that share a family request the union of their weights', () => {
@@ -53,4 +53,18 @@ test('shared stylesheets take every color from the tokens', () => {
   for (const f of ['design/base.css', 'theme/style.css']) {
     assert.deepEqual(read(f).match(/#[0-9a-f]{3,8}\b/gi), null, `${f} hard-codes a color`);
   }
+});
+
+test('self-hosted fonts get an @font-face and stay out of the Google Fonts URL', () => {
+  const d = createDesign({ preset: 'apex' });
+  assert.match(d.css, /^@font-face\{font-family:"Archivo";src:url\("fonts\/Archivo-Variable\.woff2"\) format\("woff2"\);font-weight:100 900;font-stretch:62% 125%;/);
+  assert.deepEqual(d.fontFiles, ['fonts/Archivo-Variable.woff2']);
+  assert.doesNotMatch(d.fontsUrl, /Archivo/);
+  assert.equal(createDesign({ preset: 'doctorschoice' }).fontFiles.length, 0);
+});
+
+test("the 'system' mode is light-first with a dark override", () => {
+  const d = createDesign({ preset: 'apex' });
+  assert.match(d.css, /:root\{--bg:#E9EBE6;[^}]*color-scheme:light\}/);
+  assert.match(d.css, /:root\.dark\{--bg:#0C100E;[^}]*color-scheme:dark\}/);
 });

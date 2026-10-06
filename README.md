@@ -8,8 +8,9 @@ framework, hosted on GitHub Pages.
 
 > Two looks ship with the site; pick one with `design.preset` in `site.json`:
 >
-> - **`apex`** (default): deep forest green and warm ivory with champagne-gold accents, Fraunces headings and
->   Inter text. Hairline borders, quiet surfaces, gold only for small accents. Light mode is a cream paper.
+> - **`apex`** (default): the Apex Genetics brand kit ("Hex Leaf"): ink `#121714`, paper `#F2F3EF` and brand
+>   green `#1F5A3A` on a soft green-grey ground, Archivo throughout (headlines 800 at 118% width), the official
+>   hex-leaf lockup in the header and footer. Light-first, dark when the visitor's OS is (the toggle overrides).
 > - **`doctorschoice`**: modelled on [doctorschoice.farm](https://doctorschoice.farm/). A 122px black header that
 >   scrolls away, with white bold caps links and a 4px `#FF0000` bar on hover; black hero and footer with white
 >   copy; a white page with black text (`#2A2A2A` for secondary text); `#FF0000` square markers and primary
@@ -107,8 +108,25 @@ The look is a reusable template, so [derlocke-blog](https://github.com/derlocke-
   `.icon-tile` in `base.css` puts an icon on a colored square (`style="--tile:#hex"`); the preset's
   `tileMix` and `tileInk` tokens decide how the color is used (solid pastel with a black icon in
   `doctorschoice`, a tinted tile with a colored icon in `apex`).
-- `theme/logo.svg`: the site's logo mark, drawn in `currentColor`. The build inlines it in the header and
-  footer and makes `assets/favicon.svg` from it in the preset's `brand` colors.
+- Self-hosted fonts: a font role with `src` (relative to the stylesheet, e.g. `fonts/Archivo-Variable.woff2`
+  from `design/fonts/`) gets an `@font-face` and a preload instead of a Google Fonts request; `weights` and
+  `stretch` take CSS ranges (`100 900`, `62% 125%`).
+- `defaultMode: 'system'` follows the visitor's OS color scheme until they pick one with the toggle.
+
+## Brand
+
+The Apex Genetics brand kit lives in these files:
+
+- `theme/logo.svg` (the hex-leaf icon), `theme/logo-solid.svg` (the icon for small sizes) and
+  `theme/wordmark.svg` (the name), all in `currentColor`. The header and footer rebuild the official
+  horizontal lockup from them at the kit's proportions; presets pick the outline or solid icon (`brand.mark`).
+- `public/`: `favicon.ico`, `favicon.svg` (switches with the browser's dark mode), `apple-touch-icon.png`, PWA
+  icons and `site.webmanifest`, published at the site root. Without them the build generates
+  `assets/favicon.svg` from the icon in the preset's `brand` colors.
+- `design/fonts/`: Archivo (variable width and weight), SIL Open Font License (`OFL.txt`).
+- `design/skins/apex.css`: brand typography (headlines 800 at 118% width, labels 500 with wide tracking,
+  buttons 600 at 108%) and the lockup. On dark backgrounds links use a lighter step of the brand green, because
+  the kit's `#2F7350` is too dark for small text (3.4:1).
 
 `design/base.css` and `theme/style.css` must not hard-code colors (a test enforces it), so every preset renders
 correctly from its tokens. Put anything that only makes sense for one preset into that preset's skin.

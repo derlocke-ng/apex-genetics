@@ -1,0 +1,37 @@
+/* Skin for the `apex` preset: the Apex Genetics brand kit ("Hex Leaf").
+   Archivo throughout: headlines 800 at 118% width, body 400, labels 500 with wide tracking,
+   buttons 600 at 108% width. The header and footer show the official horizontal lockup,
+   rebuilt from the icon and the wordmark at the kit's proportions: wordmark 0.3305 and
+   gap 0.263 of the icon height, both centered. Loaded after theme/style.css. */
+
+/* ---- type ---- */
+h1,h2,h3,h4{font-weight:800;font-stretch:118%;letter-spacing:.01em;line-height:1.05}
+.hero h1,.page-hero h1,.product-summary h1,.article-head h1,.not-found h1{font-weight:800;letter-spacing:.005em;line-height:1.02}
+.hero h1{font-size:clamp(2.3rem,5.4vw,4rem)}
+.specimen-name,.hero-count span,.year-title{font-weight:800;font-stretch:118%;letter-spacing:.01em}
+.prose{font-size:1.0625rem}
+.prose :is(h2,h3){letter-spacing:.01em}
+.label,.eyebrow{font-weight:500;letter-spacing:.24em}
+.eyebrow{letter-spacing:.32em}
+.chip,.card-status,.specimen-status,.tag-count,.post-count{font-weight:500;letter-spacing:.14em}
+
+/* ---- the lockup ---- */
+.brand{--lockup:2.25rem;gap:0}
+.brand-mark{width:auto;height:var(--lockup);border-radius:0;background:none;box-shadow:none;color:var(--text)}
+.brand-mark .logo{height:100%}
+.brand-name{display:flex;margin-left:calc(var(--lockup) * .263);color:var(--text)}
+.wordmark{display:block;width:auto;height:calc(var(--lockup) * .3305)}
+.site-footer .brand{--lockup:2.75rem}
+@media (max-width:420px){.site-header .brand{--lockup:1.75rem}}
+.hero-panel-mark{color:var(--accent)}
+
+/* ---- buttons (kit: 600, 108% width, .04em, 6px corners, 1.5px border) ---- */
+.btn{font-size:.95rem;font-stretch:108%;letter-spacing:.04em;border-width:1.5px}
+.btn-ghost{border-color:currentColor}
+.btn-ghost:hover{background:var(--text);border-color:var(--text);color:var(--bg)}
+.hero .btn-ghost{border-color:currentColor}
+.hero .btn-ghost:hover{background:var(--text);color:var(--bg)}
+
+/* ---- details ---- */
+.nav a{font-weight:500;font-stretch:106%;letter-spacing:.02em}
+.tile h3,.entry-card h3{font-stretch:112%}
